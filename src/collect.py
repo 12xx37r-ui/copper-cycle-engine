@@ -85,21 +85,39 @@ def futures_curve():
             "source":"Yahoo Finance individual COMEX copper contracts"}
 
 def cftc_cot():
-    select='report_date_as_yyyy_mm_dd,open_interest_all,m_money_positions_long_all,m_money_positions_short_all'
-    market="COPPER-GRADE #1 - COMMODITY EXCHANGE INC."
-    url='https://publicreporting.cftc.gov/resource/72hh-3qpy.json'
-    params={'$select':select,'$where':f"market_and_exchange_names='{market}'",'$order':'report_date_as_yyyy_mm_dd DESC','$limit':'156'}
-    try: rows=requests.get(url,params=params,headers=UA,timeout=20).json()
-    except Exception:return {"status":"unavailable","source":"CFTC"}
+    """Fetch latest CFTC disaggregated futures-only copper positioning.
+    Uses the current CFTC Public Reporting Hub endpoint and filters locally to
+    survive small market-name changes.
+    """
+    select='report_date_as_yyyy_mm_dd,market_and_exchange_names,commodity_name,open_interest_all,m_money_positions_long_all,m_money_positions_short_all'
+    urls=[
+      'https://publicreportinghub.cftc.gov/resource/72hh-3qpy.json',
+      'https://publicreporting.cftc.gov/resource/72hh-3qpy.json'
+    ]
+    rows=[]
+    params={'$select':select,'$q':'COPPER','$order':'report_date_as_yyyy_mm_dd DESC','$limit':'300'}
+    for url in urls:
+      try:
+        r=requests.get(url,params=params,headers=UA,timeout=25)
+        r.raise_for_status()
+        rows=r.json()
+        if rows: break
+      except Exception:
+        rows=[]
     vals=[]
     for r in rows:
+      market=str(r.get('market_and_exchange_names') or '').upper()
+      commodity=str(r.get('commodity_name') or '').upper()
+      if 'COPPER' not in market and 'COPPER' not in commodity: continue
       oi=num(r.get('open_interest_all')); lo=num(r.get('m_money_positions_long_all')); sh=num(r.get('m_money_positions_short_all'))
-      if oi and lo is not None and sh is not None: vals.append({"date":r.get('report_date_as_yyyy_mm_dd'),"oi":oi,"netPct":(lo-sh)/oi*100})
-    if not vals:return {"status":"unavailable","source":"CFTC"}
+      if oi and lo is not None and sh is not None:
+        vals.append({'date':r.get('report_date_as_yyyy_mm_dd'),'oi':oi,'netPct':(lo-sh)/oi*100})
+    vals.sort(key=lambda x: x.get('date') or '', reverse=True)
+    if not vals:return {'status':'unavailable','source':'CFTC Public Reporting Hub'}
     latest=vals[0]; prior=vals[1] if len(vals)>1 else latest
-    return {"date":latest['date'],"openInterest":latest['oi'],"netPct":latest['netPct'],
-            "cotPercentile":pct_rank([x['netPct'] for x in vals],latest['netPct']),
-            "netChangePp":latest['netPct']-prior['netPct'],"source":"CFTC public Socrata API"}
+    return {'date':latest['date'],'openInterest':latest['oi'],'netPct':latest['netPct'],
+            'cotPercentile':pct_rank([x['netPct'] for x in vals],latest['netPct']),
+            'netChangePp':latest['netPct']-prior['netPct'],'source':'CFTC Public Reporting Hub · Disaggregated Futures Only'}
 
 def parse_first_number(text, patterns):
     for p in patterns:
@@ -168,9 +186,13 @@ def disruptions():
 def history_inventory(today, inv):
     try:data=json.loads(HISTORY.read_text()) if HISTORY.exists() else []
     except Exception:data=[]
-    row={"date":today,"lme":inv.get('lmeInventoryTonnes'),"shfe":inv.get('shfeInventoryTonnes')}
-    data=[x for x in data if x.get('date')!=today]+[row];data=data[-520:]
-    HISTORY.write_text(json.dumps(data,ensure_ascii=False,indent=2))
+    lme=num(inv.get('lmeInventoryTonnes')); shfe=num(inv.get('shfeInventoryTonnes'))
+    # Never persist an all-null observation. It pollutes the 13-week series.
+    if lme is not None or shfe is not None:
+      row={'date':today,'lme':lme,'shfe':shfe}
+      data=[x for x in data if x.get('date')!=today]+[row]
+      data=data[-520:]
+      HISTORY.write_text(json.dumps(data,ensure_ascii=False,indent=2))
     valid=[x for x in data if num(x.get('lme')) is not None or num(x.get('shfe')) is not None]
     def total(x):return sum(v for v in [num(x.get('lme')),num(x.get('shfe'))] if v is not None)
     current=total(valid[-1]) if valid else None
@@ -179,20 +201,43 @@ def history_inventory(today, inv):
     vals=[total(x) for x in valid if total(x)>0]
     return current,change,pct_rank(vals,current)
 
+def free_inventory_proxy(curve, china, conc):
+    """Fallback when official warehouse tonnage cannot be machine-read for free.
+    This is explicitly a proxy score, not fabricated tonnes.
+    Higher score means more apparent supply abundance / stronger overvaluation pressure.
+    """
+    curve_score=num(curve.get('curveScore'))
+    demand=num(china.get('chinaDemandProxyScore'))
+    tight=num(conc.get('concentrateTightnessProxy'))
+    pieces=[]
+    if curve_score is not None: pieces.append((curve_score,0.50))
+    if demand is not None: pieces.append((100-demand,0.30))
+    if tight is not None: pieces.append((100-tight,0.20))
+    if not pieces:return {'inventoryScore':None,'inventoryChangePct13w':None,'source':'free proxy unavailable'}
+    w=sum(x[1] for x in pieces)
+    score=sum(v*wt for v,wt in pieces)/w
+    # Directional equivalent only; deliberately labelled proxy in output/UI.
+    trend=(score-50)*0.60
+    return {'inventoryScore':clamp(score),'inventoryChangePct13w':trend,
+            'source':'Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy'}
+
 def main():
     now=datetime.now(timezone.utc);today=now.date().isoformat()
     price=copper_price_block();curve=futures_curve();cot=cftc_cot();inv=inventory_sources();china=china_cycle_proxy();conc=concentrate_proxy();dis=disruptions()
     total,chg13,pct=history_inventory(today,inv)
-    # If official inventory unavailable, do not fabricate it. Score is omitted and coverage honestly falls.
-    inventory_score=pct
+    proxy=free_inventory_proxy(curve,china,conc)
+    inventory_mode='official' if pct is not None else 'free_proxy'
+    inventory_score=pct if pct is not None else proxy.get('inventoryScore')
+    inventory_change=chg13 if chg13 is not None else proxy.get('inventoryChangePct13w')
     physical={
-      **inv,"visibleInventoryTonnes":total,"inventoryChangePct13w":chg13,"inventoryScore":inventory_score,
+      **inv,"visibleInventoryTonnes":total,"inventoryChangePct13w":inventory_change,"inventoryScore":inventory_score,
+      "inventoryMode":inventory_mode,"inventoryProxySource":proxy.get('source') if inventory_mode=='free_proxy' else None,
       "chinaDemandProxyScore":china.get('chinaDemandProxyScore'),"curveSpreadPct":curve.get('curveSpreadPct'),
       "curveScore":curve.get('curveScore'),"concentrateTightnessProxy":conc.get('concentrateTightnessProxy')
     }
     payload={"schemaVersion":"1.0","generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,
              "physical":physical,"curve":curve,"cot":cot,"china":china,"concentrate":conc,"supply":dis,
-             "notes":["No paid data used","Missing official values are omitted, never fabricated","China spot premium and TC/RC are represented by clearly-labelled free proxies"]}
+             "notes":["No paid data used","Official inventory tonnage is never fabricated; a clearly-labelled free proxy score is used when official extraction fails","China spot premium and TC/RC are represented by clearly-labelled free proxies"]}
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt']},ensure_ascii=False))
 if __name__=='__main__':main()
