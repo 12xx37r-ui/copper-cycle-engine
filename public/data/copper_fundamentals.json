@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-07T01:41:24.718608+00:00",
+  "generatedAt": "2026-08-07T01:53:18.848754+00:00",
   "engine": "copper-cycle-engine",
   "price": {
-    "priceUsdPerLb": 6.71999979019165,
+    "priceUsdPerLb": 6.727499961853027,
     "longPricePercentile": 100.0,
     "range1yPercentile": 100.0,
-    "ma20": 6.393124985694885,
-    "ma200": 5.824464979171753,
-    "momentum5dPct": 4.274960385039073,
+    "ma20": 6.3934999942779545,
+    "ma200": 5.82450248003006,
+    "momentum5dPct": 4.391341356361811,
     "dailyCandles": [
       {
         "date": "2025-09-22",
@@ -1107,8 +1107,8 @@
       },
       {
         "date": "2026-08-06",
-        "close": 6.71999979019165,
-        "volume": 1698.0
+        "close": 6.727499961853027,
+        "volume": 1767.0
       }
     ],
     "weeklyCandles": [
@@ -2009,8 +2009,8 @@
       },
       {
         "date": "2026-08-03",
-        "close": 6.71999979019165,
-        "volume": 4435.0
+        "close": 6.727499961853027,
+        "volume": 4504.0
       }
     ],
     "source": "Yahoo Finance HG=F"
@@ -2024,14 +2024,14 @@
       "shfe": "official table format unavailable; proxy used"
     },
     "visibleInventoryTonnes": null,
-    "inventoryChangePct13w": 3.385818597308551,
-    "inventoryScore": 55.64303099551425,
+    "inventoryChangePct13w": 3.3206521838297474,
+    "inventoryScore": 55.53442030638291,
     "inventoryMode": "free_proxy",
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 73.33053076988395,
+    "chinaDemandProxyScore": 73.45120931336321,
     "curveSpreadPct": 0.7208689038748606,
     "curveScore": 68.02172259687151,
-    "concentrateTightnessProxy": 31.843355359781622
+    "concentrateTightnessProxy": 32.2053909902194
   },
   "curve": {
     "near": {
@@ -2058,15 +2058,15 @@
     "source": "CFTC Public Reporting Hub · Disaggregated Futures Only"
   },
   "china": {
-    "chinaDemandProxyScore": 73.33053076988395,
+    "chinaDemandProxyScore": 73.45120931336321,
     "fxi20dPct": 7.6025169923013,
-    "copper20dPct": 8.125496785281339,
-    "manufacturingConstructionScore": 73.33053076988395,
+    "copper20dPct": 8.246175328760597,
+    "manufacturingConstructionScore": 73.45120931336321,
     "source": "Yahoo FXI + HG=F free market proxy"
   },
   "concentrate": {
-    "concentrateTightnessProxy": 31.843355359781622,
-    "minersVsMetal20dPp": 6.052214880072793,
+    "concentrateTightnessProxy": 32.2053909902194,
+    "minersVsMetal20dPp": 5.931536336593535,
     "source": "COPX vs HG=F relative-strength proxy"
   },
   "supply": {
