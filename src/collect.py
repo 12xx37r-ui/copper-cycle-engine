@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json, math, os, re, time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 import requests
@@ -183,22 +183,84 @@ def disruptions():
         if hit: raw+=hit;items.append({"title":e.get('title'),"link":e.get('link'),"impact":hit})
     return {"supplyDisruptionScore":clamp(raw,0,100),"events":items[:12],"source":"Google News RSS; event score, not tonnage estimate"}
 
-def history_inventory(today, inv):
-    try:data=json.loads(HISTORY.read_text()) if HISTORY.exists() else []
-    except Exception:data=[]
-    lme=num(inv.get('lmeInventoryTonnes')); shfe=num(inv.get('shfeInventoryTonnes'))
-    # Never persist an all-null observation. It pollutes the 13-week series.
-    if lme is not None or shfe is not None:
-      row={'date':today,'lme':lme,'shfe':shfe}
-      data=[x for x in data if x.get('date')!=today]+[row]
-      data=data[-520:]
-      HISTORY.write_text(json.dumps(data,ensure_ascii=False,indent=2))
-    valid=[x for x in data if num(x.get('lme')) is not None or num(x.get('shfe')) is not None]
-    def total(x):return sum(v for v in [num(x.get('lme')),num(x.get('shfe'))] if v is not None)
-    current=total(valid[-1]) if valid else None
-    prior=total(valid[-14]) if len(valid)>=14 else None
+def clean_history_rows(data, today, new_row, retention_weeks=26):
+    """Keep only valid, unique and recent history rows.
+
+    Rules:
+    - remove malformed rows
+    - remove rows where official inventory and proxy score are all missing
+    - replace an existing row for the same date
+    - keep only the latest ``retention_weeks``
+    - sort ascending by date
+    """
+    cutoff = date.fromisoformat(today) - timedelta(weeks=retention_weeks)
+    rows_by_date = {}
+
+    for row in data if isinstance(data, list) else []:
+      if not isinstance(row, dict):
+        continue
+      row_date = row.get('date')
+      if not row_date or row_date == today:
+        continue
+      try:
+        parsed = date.fromisoformat(str(row_date))
+      except Exception:
+        continue
+      if parsed < cutoff:
+        continue
+      has_value = (
+        num(row.get('lme')) is not None or
+        num(row.get('shfe')) is not None or
+        num(row.get('inventoryScore')) is not None
+      )
+      if not has_value:
+        continue
+      rows_by_date[str(row_date)] = row
+
+    if isinstance(new_row, dict):
+      has_new_value = (
+        num(new_row.get('lme')) is not None or
+        num(new_row.get('shfe')) is not None or
+        num(new_row.get('inventoryScore')) is not None
+      )
+      if has_new_value:
+        rows_by_date[today] = new_row
+
+    return [rows_by_date[k] for k in sorted(rows_by_date)]
+
+
+def history_inventory(today, inv, proxy):
+    try:
+      data=json.loads(HISTORY.read_text()) if HISTORY.exists() else []
+    except Exception:
+      data=[]
+
+    lme=num(inv.get('lmeInventoryTonnes'))
+    shfe=num(inv.get('shfeInventoryTonnes'))
+    proxy_score=num(proxy.get('inventoryScore'))
+    mode='official' if (lme is not None or shfe is not None) else 'free_proxy'
+
+    new_row={
+      'date':today,
+      'lme':lme,
+      'shfe':shfe,
+      'inventoryScore':proxy_score if mode=='free_proxy' else None,
+      'inventoryMode':mode
+    }
+
+    data=clean_history_rows(data,today,new_row,retention_weeks=26)
+    HISTORY.parent.mkdir(parents=True,exist_ok=True)
+    HISTORY.write_text(json.dumps(data,ensure_ascii=False,indent=2))
+
+    official=[x for x in data if num(x.get('lme')) is not None or num(x.get('shfe')) is not None]
+    def total(x):
+      vals=[num(x.get('lme')),num(x.get('shfe'))]
+      return sum(v for v in vals if v is not None)
+
+    current=total(official[-1]) if official else None
+    prior=total(official[-14]) if len(official)>=14 else None
     change=(current/prior-1)*100 if current and prior else None
-    vals=[total(x) for x in valid if total(x)>0]
+    vals=[total(x) for x in official if total(x)>0]
     return current,change,pct_rank(vals,current)
 
 def free_inventory_proxy(curve, china, conc):
@@ -224,8 +286,8 @@ def free_inventory_proxy(curve, china, conc):
 def main():
     now=datetime.now(timezone.utc);today=now.date().isoformat()
     price=copper_price_block();curve=futures_curve();cot=cftc_cot();inv=inventory_sources();china=china_cycle_proxy();conc=concentrate_proxy();dis=disruptions()
-    total,chg13,pct=history_inventory(today,inv)
     proxy=free_inventory_proxy(curve,china,conc)
+    total,chg13,pct=history_inventory(today,inv,proxy)
     inventory_mode='official' if pct is not None else 'free_proxy'
     inventory_score=pct if pct is not None else proxy.get('inventoryScore')
     inventory_change=chg13 if chg13 is not None else proxy.get('inventoryChangePct13w')
