@@ -1,20 +1,15 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-08T22:13:32.896256+00:00",
+  "generatedAt": "2026-08-09T23:00:27.097449+00:00",
   "engine": "copper-cycle-engine",
   "price": {
-    "priceUsdPerLb": 6.570499897003174,
+    "priceUsdPerLb": 6.605999946594238,
     "longPricePercentile": 99.8011137629276,
     "range1yPercentile": 98.01587301587301,
-    "ma20": 6.408324980735779,
-    "ma200": 5.832162477970123,
-    "momentum5dPct": 2.089807790760645,
+    "ma20": 6.426974987983703,
+    "ma200": 5.840542478561401,
+    "momentum5dPct": 1.412342776963782,
     "dailyCandles": [
-      {
-        "date": "2025-09-23",
-        "close": 4.584499835968018,
-        "volume": 1072.0
-      },
       {
         "date": "2025-09-24",
         "close": 4.752500057220459,
@@ -1109,6 +1104,11 @@
         "date": "2026-08-07",
         "close": 6.570499897003174,
         "volume": 987.0
+      },
+      {
+        "date": "2026-08-09",
+        "close": 6.605999946594238,
+        "volume": 639.0
       }
     ],
     "weeklyCandles": [
@@ -2009,8 +2009,8 @@
       },
       {
         "date": "2026-08-03",
-        "close": 6.591000080108643,
-        "volume": 59698.0
+        "close": 6.605999946594238,
+        "volume": 6001.0
       }
     ],
     "source": "Yahoo Finance HG=F"
@@ -2024,25 +2024,25 @@
       "shfe": "official table format unavailable; proxy used"
     },
     "visibleInventoryTonnes": null,
-    "inventoryChangePct13w": 9.237794605845243,
-    "inventoryScore": 65.3963243430754,
+    "inventoryChangePct13w": 8.925669795824154,
+    "inventoryScore": 64.87611632637359,
     "inventoryMode": "free_proxy",
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 71.47555796035522,
+    "chinaDemandProxyScore": 72.05356686780166,
     "curveSpreadPct": 1.2860560707674162,
     "curveScore": 82.15140176918541,
-    "concentrateTightnessProxy": 21.18354576705368
+    "concentrateTightnessProxy": 22.91757248939306
   },
   "curve": {
     "near": {
       "symbol": "HGQ26.CMX",
       "price": 6.570499897003174,
-      "volume": 987.0
+      "volume": 706.0
     },
     "far": {
       "symbol": "HGX26.CMX",
       "price": 6.65500020980835,
-      "volume": 1535.0
+      "volume": 377.0
     },
     "curveSpreadPct": 1.2860560707674162,
     "curveScore": 82.15140176918541,
@@ -2058,15 +2058,15 @@
     "source": "CFTC Public Reporting Hub · Disaggregated Futures Only"
   },
   "china": {
-    "chinaDemandProxyScore": 71.47555796035522,
+    "chinaDemandProxyScore": 72.05356686780166,
     "fxi20dPct": 8.03464355880723,
-    "copper20dPct": 5.406270842740746,
-    "manufacturingConstructionScore": 71.47555796035522,
+    "copper20dPct": 5.984279750187205,
+    "manufacturingConstructionScore": 72.05356686780166,
     "source": "Yahoo FXI + HG=F free market proxy"
   },
   "concentrate": {
-    "concentrateTightnessProxy": 21.18354576705368,
-    "minersVsMetal20dPp": 9.60548474431544,
+    "concentrateTightnessProxy": 22.91757248939306,
+    "minersVsMetal20dPp": 9.02747583686898,
     "source": "COPX vs HG=F relative-strength proxy"
   },
   "supply": {
@@ -2074,7 +2074,7 @@
     "events": [
       {
         "title": "MahaRERA extends project completion deadlines by 4 months citing force majeure - The Economic Times",
-        "link": "https://news.google.com/rss/articles/CBMi6wJBVV95cUxQNV9EVERqVURIXzJFdFplMS1ZMm5GS2N1al9tZUtSLUdwYVVWTVJKbHVzNnpKT2o3TlEzdDZ4VWpoTVV6Tk1CVG5wRExFR3dVbV9NUnAyYUF5UDNhZlltMUVwd3prbkY5UmFSc0ktSE9DbjZjOGhqYi1pZjZBREoycHdieWxzT09za3dJaW9oZHVuWkszT0ZEZl9LcTlKT0o2U3kxWlhmZkdMeTFNSHFOaEZOVThsRFl3Y0JBZlhuZzd4YTZ4ZWM1bEloU0w0RjlVM3YzdzNzN1pKWEJkLTA0ZjRZYkV0Y3J4V1ZLLW8xLWl6bFdBekJBTnUyOGlESmFSTlo0REZxM0JoMm9nZTd2MlE3cE4taXUycWlLSzhWVGhjUU9uZlgwRHc5ODJlWDdtYXFnRkY2cm1vNU1JOU1SLTJqeEpWVUJya29EMEUwbm5IMm1Lc3NpYmh6MzJGOHl0SlZyZ0taazRFMXPSAYcCQVVfeXFMTXQ2c2RodVhvcmloN0Z3dGhaZ1J1Y294cnBRZ2tJODZfQ1p2anowR1k3elJJelotelM5bGlrUFlNNjh2bXpaRGZkc3p6SkF6QzVWWEJFY2pOWlJBMG1IVE1CSk5lcTBDZW5DT2JRR0RPV0ZCd21yVFNBaFZjeVJ2V3laelc4ZHg3d3BIU2NiYXh6LV93VmF1M2pBODBVTHRsb2RPRGQ0M2FlUWQ0MHhHeWxWTFYzT0FLZ01DcDBPcWNkNHN0eDlDcHFPSW5VZVVFeTMySnFKNk96TldZVlB3dHBlUGlYRUN1ZzhXcUxLU0Uxc3lENU96ekYyaVVoTGhoWnJiVTROdWM?oc=5",
+        "link": "https://news.google.com/rss/articles/CBMiggJBVV95cUxPMnRlM1FIOTlxZ1BKRXhOQWUybThfaTRRa3ZmVjh6MjNrR2pUeGVBV1JlSlZvNnRaM3ViM3FlTk1ENExlVUFZNUFKN3hjWWl1c3MxM3c0SjNOc1FWLXhxQmFiWDZPanduX2tBdDlvLTBfNldyMjhWMWlERmFMTlBNOFUyYXduQnZRMTE3Rmx3OVJMQkNXRklJQ0doZktJMTh3ZE5kdzc0SzFkeVJFRUNtMU0wVHVDN0VIYWZVVTVhaHRkSGcxbWJ6U3pzc0tsUk9EN1FGRWhkQXJpa2xFUUU3bEowdm5OZWJjS3hENVJ0OU1XTkdqMlozOXZRdHZvdjZEQnfSAYcCQVVfeXFMTXQ2c2RodVhvcmloN0Z3dGhaZ1J1Y294cnBRZ2tJODZfQ1p2anowR1k3elJJelotelM5bGlrUFlNNjh2bXpaRGZkc3p6SkF6QzVWWEJFY2pOWlJBMG1IVE1CSk5lcTBDZW5DT2JRR0RPV0ZCd21yVFNBaFZjeVJ2V3laelc4ZHg3d3BIU2NiYXh6LV93VmF1M2pBODBVTHRsb2RPRGQ0M2FlUWQ0MHhHeWxWTFYzT0FLZ01DcDBPcWNkNHN0eDlDcHFPSW5VZVVFeTMySnFKNk96TldZVlB3dHBlUGlYRUN1ZzhXcUxLU0Uxc3lENU96ekYyaVVoTGhoWnJiVTROdWM?oc=5",
         "impact": 18
       }
     ],
