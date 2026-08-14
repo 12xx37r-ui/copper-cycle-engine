@@ -1,20 +1,15 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-13T23:25:44.935972+00:00",
+  "generatedAt": "2026-08-14T21:58:29.181424+00:00",
   "engine": "copper-cycle-engine",
   "price": {
-    "priceUsdPerLb": 6.5920000076293945,
-    "longPricePercentile": 99.6816553919618,
-    "range1yPercentile": 96.82539682539682,
-    "ma20": 6.4704750061035154,
-    "ma200": 5.863807480335236,
-    "momentum5dPct": -1.4206638711519948,
+    "priceUsdPerLb": 6.606500148773193,
+    "longPricePercentile": 99.76133651551312,
+    "range1yPercentile": 97.61904761904762,
+    "ma20": 6.489825034141541,
+    "ma200": 5.871139981746674,
+    "momentum5dPct": 0.5479073485175734,
     "dailyCandles": [
-      {
-        "date": "2025-09-29",
-        "close": 4.841000080108643,
-        "volume": 2748.0
-      },
       {
         "date": "2025-09-30",
         "close": 4.804999828338623,
@@ -1103,12 +1098,17 @@
       {
         "date": "2026-08-12",
         "close": 6.5970001220703125,
-        "volume": 1564.0
+        "volume": 638.0
       },
       {
         "date": "2026-08-13",
-        "close": 6.5920000076293945,
-        "volume": 304.0
+        "close": 6.59250020980835,
+        "volume": 638.0
+      },
+      {
+        "date": "2026-08-14",
+        "close": 6.606500148773193,
+        "volume": 37260.0
       }
     ],
     "weeklyCandles": [
@@ -2009,8 +2009,8 @@
       },
       {
         "date": "2026-08-10",
-        "close": 6.5920000076293945,
-        "volume": 4481.0
+        "close": 6.606500148773193,
+        "volume": 41149.0
       }
     ],
     "source": "Yahoo Finance HG=F"
@@ -2024,49 +2024,49 @@
       "shfe": "official table format unavailable; proxy used"
     },
     "visibleInventoryTonnes": null,
-    "inventoryChangePct13w": 17.34268828991961,
-    "inventoryScore": 78.90448048319935,
+    "inventoryChangePct13w": 11.579406621192643,
+    "inventoryScore": 69.29901103532107,
     "inventoryMode": "free_proxy",
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 56.612789851204994,
-    "curveSpreadPct": 2.6000022888183594,
-    "curveScore": 100,
-    "concentrateTightnessProxy": 20.558412807195793
+    "chinaDemandProxyScore": 60.66738228399416,
+    "curveSpreadPct": 1.2900221339565698,
+    "curveScore": 82.25055334891425,
+    "concentrateTightnessProxy": 18.130254769689053
   },
   "curve": {
     "near": {
       "symbol": "HGQ26.CMX",
-      "price": 6.5,
-      "volume": 5.0
+      "price": 6.589000225067139,
+      "volume": 214.0
     },
     "far": {
       "symbol": "HGX26.CMX",
-      "price": 6.669000148773193,
-      "volume": 490.0
+      "price": 6.673999786376953,
+      "volume": 1311.0
     },
-    "curveSpreadPct": 2.6000022888183594,
-    "curveScore": 100,
+    "curveSpreadPct": 1.2900221339565698,
+    "curveScore": 82.25055334891425,
     "structure": "contango",
     "source": "Yahoo Finance individual COMEX copper contracts"
   },
   "cot": {
-    "date": "2026-08-04T00:00:00.000",
-    "openInterest": 289395.0,
-    "netPct": 26.178061127524664,
-    "cotPercentile": 92.0,
-    "netChangePp": 2.5002150364380924,
+    "date": "2026-08-11T00:00:00.000",
+    "openInterest": 297047.0,
+    "netPct": 26.604207414988203,
+    "cotPercentile": 93.66666666666667,
+    "netChangePp": 0.42614628746353844,
     "source": "CFTC Public Reporting Hub · Disaggregated Futures Only"
   },
   "china": {
-    "chinaDemandProxyScore": 56.612789851204994,
-    "fxi20dPct": 0.9556960403153791,
-    "copper20dPct": 4.701397770574234,
-    "manufacturingConstructionScore": 56.612789851204994,
+    "chinaDemandProxyScore": 60.66738228399416,
+    "fxi20dPct": 2.226774971428891,
+    "copper20dPct": 6.213832341136372,
+    "manufacturingConstructionScore": 60.66738228399416,
     "source": "Yahoo FXI + HG=F free market proxy"
   },
   "concentrate": {
-    "concentrateTightnessProxy": 20.558412807195793,
-    "minersVsMetal20dPp": 9.813862397601403,
+    "concentrateTightnessProxy": 18.130254769689053,
+    "minersVsMetal20dPp": 10.623248410103649,
     "source": "COPX vs HG=F relative-strength proxy"
   },
   "supply": {
@@ -2078,12 +2078,12 @@
         "impact": 30
       },
       {
-        "title": "CREDAI welcomes Bengal realty reforms; seeks 8-month force majeure relief - economictimes.com",
+        "title": "CREDAI welcomes Bengal realty reforms; seeks 8-month force majeure relief - The Economic Times",
         "link": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxNVjZESk5sYzBGcG5xejZDSDN0OFkydExwUEt6NWUxb3Nudy1ZR2dOOVVyd2FqZEEyQXByRHBtN1lGb1d6MFBCbWp4VDAxYlpEVjd1bFdnQ1hwVkt0cUFvbWNGVmEza2FQcVp0bF9wVmtCQnR0elRHcW54cHBzQS11dlVmLWlLMmVZcUVHSHRDMDRXYkNIa0ZXMy1xcXNNYzBEc1h6U3hEQ0xNdDN2WlNfZ0p1bjVfdUt3ZG85YjRsd0xUdERHaC1kakVwYUpXMnowM0ZHUGRLZFVHdVFsMlJ1T25GQkh5bE81cHhIQXFWQ2lEN2phRGNlSmN30gH_AUFVX3lxTFBKWHdxSktXRzV0R3lJWGh2T1BiUkhSOVl4T1o2Q3FVaVZ0RDVCb0NOcDFNbEF3enhXVFV6Z2t6dU10X2t4c2cwSDVlWjJXTS05YU9nTmZtUFNjS2VZRHNSU19LTENaVHUyMi15RW0tdGcxT190OXE0SHNDdEdfTTVBN1dXWVhqckVza19ENUhqbjdQSHNTN2F4d1RyZmFtUUgzbnZkMGhFV2xoQ3p3WHVSVjFJMl9JRURPdjlkcGFSUUpmNnp0dE5iT3RWNk9xZV9NU09Vd2lsSjBLOHJoR1FNWkJiZ3Bhb1VNQnhEdW84cFFHTkZwVV9uR1ZYOXVVRQ?oc=5",
         "impact": 18
       },
       {
-        "title": "MahaRERA extends project completion deadlines by 4 months citing force majeure - economictimes.com",
+        "title": "MahaRERA extends project completion deadlines by 4 months citing force majeure - The Economic Times",
         "link": "https://news.google.com/rss/articles/CBMiggJBVV95cUxPMnRlM1FIOTlxZ1BKRXhOQWUybThfaTRRa3ZmVjh6MjNrR2pUeGVBV1JlSlZvNnRaM3ViM3FlTk1ENExlVUFZNUFKN3hjWWl1c3MxM3c0SjNOc1FWLXhxQmFiWDZPanduX2tBdDlvLTBfNldyMjhWMWlERmFMTlBNOFUyYXduQnZRMTE3Rmx3OVJMQkNXRklJQ0doZktJMTh3ZE5kdzc0SzFkeVJFRUNtMU0wVHVDN0VIYWZVVTVhaHRkSGcxbWJ6U3pzc0tsUk9EN1FGRWhkQXJpa2xFUUU3bEowdm5OZWJjS3hENVJ0OU1XTkdqMlozOXZRdHZvdjZEQnfSAYcCQVVfeXFMTXQ2c2RodVhvcmloN0Z3dGhaZ1J1Y294cnBRZ2tJODZfQ1p2anowR1k3elJJelotelM5bGlrUFlNNjh2bXpaRGZkc3p6SkF6QzVWWEJFY2pOWlJBMG1IVE1CSk5lcTBDZW5DT2JRR0RPV0ZCd21yVFNBaFZjeVJ2V3laelc4ZHg3d3BIU2NiYXh6LV93VmF1M2pBODBVTHRsb2RPRGQ0M2FlUWQ0MHhHeWxWTFYzT0FLZ01DcDBPcWNkNHN0eDlDcHFPSW5VZVVFeTMySnFKNk96TldZVlB3dHBlUGlYRUN1ZzhXcUxLU0Uxc3lENU96ekYyaVVoTGhoWnJiVTROdWM?oc=5",
         "impact": 18
       }
