@@ -1,8 +1,9 @@
 from __future__ import annotations
-import json, math, os, re, time
+import json, math, os, re, time, random, hashlib
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 import requests
 import pandas as pd
 import yfinance as yf
@@ -12,6 +13,134 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public/data/copper_fundamentals.json"
 HISTORY = ROOT / "public/data/copper_history.json"
 UA = {"User-Agent":"Mozilla/5.0 Copper-Cycle-Engine/1.0", "Accept":"text/html,application/json"}
+
+API_HEALTH = ROOT / "public/data/api_health.json"
+try:
+    PREVIOUS_PAYLOAD = json.loads(OUT.read_text()) if OUT.exists() else {}
+except Exception:
+    PREVIOUS_PAYLOAD = {}
+try:
+    PREVIOUS_HEALTH = json.loads(API_HEALTH.read_text()) if API_HEALTH.exists() else {}
+except Exception:
+    PREVIOUS_HEALTH = {}
+
+SOURCE_HOMES = {
+    "Yahoo Finance": "https://finance.yahoo.com/quote/HG=F/",
+    "CFTC": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+    "LME": "https://www.lme.com/en/market-data/reports-and-data/warehouse-and-stocks-reports",
+    "SHFE": "https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
+    "Google News RSS": "https://news.google.com/",
+}
+
+def iso_now():
+    return datetime.now(timezone.utc).isoformat()
+
+def parse_dt(v):
+    if not v: return None
+    try: return datetime.fromisoformat(str(v).replace('Z','+00:00'))
+    except Exception: return None
+
+def age_seconds(v):
+    d=parse_dt(v)
+    return max(0.0,(datetime.now(timezone.utc)-d).total_seconds()) if d else None
+
+def reliability_for(state, age_s=None, ttl_s=None, fallback_quality=0.8):
+    if state == 'LIVE': return 1.0
+    if state == 'CACHE': return 1.0 if age_s is None or ttl_s is None or age_s <= ttl_s else 0.95
+    if state == 'FALLBACK': return max(0.35,min(0.95,float(fallback_quality)))
+    if state == 'LKG':
+        if age_s is None: return 0.55
+        horizon=max(float(ttl_s or 86400),1.0)
+        return max(0.20,0.90-0.65*min(age_s/horizon,1.5))
+    return 0.0
+
+class ApiRuntime:
+    def __init__(self):
+        self.memo={}
+        self.stats={}
+        self.last_call={}
+        self.source_rows={}
+    def _provider(self,url):
+        host=urlparse(url).netloc.lower()
+        if 'yahoo' in host: return 'Yahoo Finance'
+        if 'cftc' in host: return 'CFTC'
+        if 'lme.com' in host: return 'LME'
+        if 'shfe.com' in host: return 'SHFE'
+        if 'news.google.com' in host: return 'Google News RSS'
+        return host or 'unknown'
+    def _stat(self,p):
+        return self.stats.setdefault(p,{'network_calls':0,'deduplicated':0,'cache_uses':0,'retries':0,'http_429':0,'timeouts':0,'errors':0})
+    def _throttle(self,p):
+        minimum={'Yahoo Finance':0.12,'CFTC':0.35,'LME':0.35,'SHFE':0.35,'Google News RSS':0.25}.get(p,0.12)
+        last=self.last_call.get(p)
+        if last is not None:
+            wait=minimum-(time.monotonic()-last)
+            if wait>0: time.sleep(wait)
+        self.last_call[p]=time.monotonic()
+    def request(self,url,*,params=None,headers=None,timeout=20,max_retries=2):
+        p=self._provider(url); st=self._stat(p)
+        key=(url,json.dumps(params or {},sort_keys=True,default=str))
+        if key in self.memo:
+            st['deduplicated']+=1
+            return self.memo[key]
+        last_exc=None
+        for attempt in range(max_retries+1):
+            self._throttle(p)
+            try:
+                st['network_calls']+=1
+                r=requests.get(url,params=params,headers=headers or UA,timeout=timeout)
+                if r.status_code==429:
+                    st['http_429']+=1
+                    if attempt<max_retries:
+                        retry=r.headers.get('Retry-After')
+                        try: delay=float(retry)
+                        except Exception: delay=min(8.0,0.8*(2**attempt))+random.uniform(0.05,0.35)
+                        st['retries']+=1; time.sleep(max(0.1,delay)); continue
+                if 500<=r.status_code<600 and attempt<max_retries:
+                    st['retries']+=1; time.sleep(min(6.0,0.6*(2**attempt))+random.uniform(0.05,0.35)); continue
+                r.raise_for_status(); self.memo[key]=r; return r
+            except requests.Timeout as e:
+                st['timeouts']+=1; last_exc=e
+            except Exception as e:
+                last_exc=e
+            if attempt<max_retries:
+                st['retries']+=1; time.sleep(min(5.0,0.5*(2**attempt))+random.uniform(0.05,0.25))
+        st['errors']+=1
+        raise last_exc or RuntimeError('request failed')
+    def mark(self,name,state,source,*,data_at=None,used=True,reliability=None,alternative=None,home=None,ttl_s=None):
+        age=age_seconds(data_at)
+        self.source_rows[name]={
+          'status':state,'source':source,'dataAt':data_at,'ageSeconds':round(age,1) if age is not None else None,
+          'usedInCalculation':bool(used),'reliability':round(float(reliability if reliability is not None else reliability_for(state,age,ttl_s)),3),
+          'fallback':alternative,'url':home or SOURCE_HOMES.get(source), 'checkedAt':iso_now()
+        }
+    def health(self):
+        return {'schemaVersion':'1.0','generatedAt':iso_now(),'sources':self.source_rows,'providers':self.stats}
+
+RUNTIME=ApiRuntime()
+_YF_MEMO={}
+
+def previous_section(name):
+    v=PREVIOUS_PAYLOAD.get(name)
+    return json.loads(json.dumps(v)) if isinstance(v,dict) else None
+
+def previous_checked(name):
+    row=((PREVIOUS_HEALTH.get('sources') or {}).get(name) or {})
+    return parse_dt(row.get('checkedAt'))
+
+def is_due(name,hours):
+    d=previous_checked(name)
+    return d is None or (datetime.now(timezone.utc)-d).total_seconds() >= hours*3600
+
+def lkg_or_unavailable(name, source, *, max_age_h=24, used=True):
+    prev=previous_section(name)
+    generated=PREVIOUS_PAYLOAD.get('generatedAt')
+    age=age_seconds(generated)
+    if prev is not None and (age is None or age <= max_age_h*3600):
+        RUNTIME.mark(name,'LKG',source,data_at=generated,used=used,ttl_s=max_age_h*3600)
+        return prev
+    RUNTIME.mark(name,'UNAVAILABLE',source,data_at=generated,used=used,reliability=0.0)
+    return None
 
 def num(v):
     try:
@@ -27,18 +156,31 @@ def pct_rank(values,current):
     return 100*sum(x<=current for x in vals)/len(vals)
 
 def fetch(url, timeout=20):
-    r=requests.get(url,headers=UA,timeout=timeout)
-    r.raise_for_status(); return r
+    return RUNTIME.request(url, headers=UA, timeout=timeout)
 
 def yahoo_history(symbol, period="10y", interval="1d"):
-    h=yf.Ticker(symbol).history(period=period,interval=interval,auto_adjust=False)
-    if h is None or h.empty:return []
-    out=[]
-    for idx,row in h.iterrows():
-        c=num(row.get("Close"));
-        if c is None:continue
-        out.append({"date":str(idx.date()),"close":c,"volume":num(row.get("Volume"))})
-    return out
+    key=(symbol,period,interval)
+    if key in _YF_MEMO:
+        RUNTIME._stat('Yahoo Finance')['deduplicated']+=1
+        return _YF_MEMO[key]
+    last_exc=None
+    for attempt in range(3):
+      try:
+        RUNTIME._throttle('Yahoo Finance'); RUNTIME._stat('Yahoo Finance')['network_calls']+=1
+        h=yf.Ticker(symbol).history(period=period,interval=interval,auto_adjust=False)
+        if h is None or h.empty: raise RuntimeError('empty Yahoo history')
+        out=[]
+        for idx,row in h.iterrows():
+            c=num(row.get("Close"));
+            if c is None:continue
+            out.append({"date":str(idx.date()),"close":c,"volume":num(row.get("Volume"))})
+        _YF_MEMO[key]=out; return out
+      except Exception as e:
+        last_exc=e
+        if attempt<2:
+          RUNTIME._stat('Yahoo Finance')['retries']+=1; time.sleep(0.6*(2**attempt)+random.uniform(.05,.25))
+    RUNTIME._stat('Yahoo Finance')['errors']+=1
+    return []
 
 def copper_price_block():
     daily=yahoo_history("HG=F","10y","1d")
@@ -98,8 +240,7 @@ def cftc_cot():
     params={'$select':select,'$q':'COPPER','$order':'report_date_as_yyyy_mm_dd DESC','$limit':'300'}
     for url in urls:
       try:
-        r=requests.get(url,params=params,headers=UA,timeout=25)
-        r.raise_for_status()
+        r=RUNTIME.request(url,params=params,headers=UA,timeout=25)
         rows=r.json()
         if rows: break
       except Exception:
@@ -153,19 +294,25 @@ def inventory_sources():
     if out['shfeInventoryTonnes'] is None:out['statuses']['shfe']='official table format unavailable; proxy used'
     return out
 
-def china_cycle_proxy():
-    # Free and durable market proxy: China ETF + copper/China relative momentum. Official PMI can be supplied later.
-    fx=yahoo_history('FXI','1y','1d'); copper=yahoo_history('HG=F','1y','1d')
+def china_cycle_proxy(copper_rows=None):
+    # Preserve the original formula when both inputs are live. If one leg is missing,
+    # renormalize instead of silently substituting zero / neutral data.
+    fx=yahoo_history('FXI','1y','1d'); copper=copper_rows or yahoo_history('HG=F','1y','1d')
     def mom(rows,n):
       return (rows[-1]['close']/rows[-1-n]['close']-1)*100 if len(rows)>n else None
     fxi20=mom(fx,20); cu20=mom(copper,20)
-    score=clamp(50+(fxi20 or 0)*2+(cu20 or 0))
+    pieces=[]
+    if fxi20 is not None: pieces.append((50+3*fxi20,2.0))
+    if cu20 is not None: pieces.append((50+3*cu20,1.0))
+    if not pieces:
+      return {"chinaDemandProxyScore":None,"fxi20dPct":fxi20,"copper20dPct":cu20,"manufacturingConstructionScore":None,"source":"Yahoo FXI + HG=F free market proxy","status":"unavailable"}
+    score=clamp(sum(v*w for v,w in pieces)/sum(w for _,w in pieces))
     return {"chinaDemandProxyScore":score,"fxi20dPct":fxi20,"copper20dPct":cu20,
             "manufacturingConstructionScore":score,"source":"Yahoo FXI + HG=F free market proxy"}
 
-def concentrate_proxy():
+def concentrate_proxy(copper_rows=None):
     # TC/RC itself is paywalled. Use copper miners vs metal + curve as a free stress proxy.
-    copx=yahoo_history('COPX','1y','1d'); cu=yahoo_history('HG=F','1y','1d')
+    copx=yahoo_history('COPX','1y','1d'); cu=copper_rows or yahoo_history('HG=F','1y','1d')
     if len(copx)<21 or len(cu)<21:return {"status":"unavailable"}
     m=(copx[-1]['close']/copx[-21]['close']-1)*100-(cu[-1]['close']/cu[-21]['close']-1)*100
     # miners underperforming metal can indicate cost/supply stress; map to tightness then valuation offset.
@@ -177,7 +324,7 @@ def disruptions():
     keywords={'force majeure':18,'strike':12,'outage':12,'suspension':15,'accident':12,'guidance cut':12,'restart':-8,'recovery':-6}
     items=[]; raw=0
     for url in feeds:
-      d=feedparser.parse(url)
+      d=feedparser.parse(fetch(url,timeout=20).content)
       for e in d.entries[:40]:
         title=e.get('title','').lower(); hit=sum(w for k,w in keywords.items() if k in title)
         if hit: raw+=hit;items.append({"title":e.get('title'),"link":e.get('link'),"impact":hit})
@@ -285,7 +432,53 @@ def free_inventory_proxy(curve, china, conc):
 
 def main():
     now=datetime.now(timezone.utc);today=now.date().isoformat()
-    price=copper_price_block();curve=futures_curve();cot=cftc_cot();inv=inventory_sources();china=china_cycle_proxy();conc=concentrate_proxy();dis=disruptions()
+
+    price=copper_price_block()
+    if price.get('priceUsdPerLb') is None:
+        price=lkg_or_unavailable('price','Yahoo Finance',max_age_h=8) or {"priceUsdPerLb":None,"longPricePercentile":None,"range1yPercentile":None,"ma20":None,"ma200":None,"momentum5dPct":None,"dailyCandles":[],"weeklyCandles":[],"source":"Yahoo Finance HG=F"}
+    else:
+        data_at=(price.get('dailyCandles') or [{}])[-1].get('date') if price.get('dailyCandles') else None
+        RUNTIME.mark('price','LIVE','Yahoo Finance',data_at=data_at,home=SOURCE_HOMES['Yahoo Finance'])
+
+    curve=futures_curve()
+    if curve.get('curveSpreadPct') is None:
+        curve=lkg_or_unavailable('curve','Yahoo Finance',max_age_h=8) or curve
+    else: RUNTIME.mark('curve','LIVE','Yahoo Finance',data_at=now.isoformat())
+
+    # Weekly/daily publications are not hammered every 30-minute market workflow.
+    if is_due('cot',6):
+        cot=cftc_cot()
+        if cot.get('netPct') is None: cot=lkg_or_unavailable('cot','CFTC',max_age_h=10*24) or cot
+        else: RUNTIME.mark('cot','LIVE','CFTC',data_at=cot.get('date'),ttl_s=10*24*3600)
+    else:
+        cot=previous_section('cot') or cftc_cot()
+        RUNTIME.mark('cot','CACHE','CFTC',data_at=(cot or {}).get('date'),ttl_s=10*24*3600)
+
+    if is_due('inventory',4):
+        inv=inventory_sources()
+        official_ok=inv.get('lmeInventoryTonnes') is not None or inv.get('shfeInventoryTonnes') is not None
+        RUNTIME.mark('inventory','LIVE' if official_ok else 'FALLBACK','LME' if inv.get('lmeInventoryTonnes') is not None else 'SHFE' if inv.get('shfeInventoryTonnes') is not None else 'Yahoo Finance',data_at=today,reliability=1.0 if official_ok else 0.72,alternative=None if official_ok else 'Free supply proxy')
+    else:
+        prev_phys=previous_section('physical') or {}
+        inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses')}
+        inv['sources']=inv.get('sources') or {}; inv['statuses']=inv.get('statuses') or {}
+        RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),ttl_s=24*3600)
+
+    shared_copper=(price.get('dailyCandles') or [])
+    china=china_cycle_proxy(shared_copper)
+    if china.get('chinaDemandProxyScore') is None: china=lkg_or_unavailable('china','Yahoo Finance',max_age_h=8) or china
+    else: RUNTIME.mark('china','LIVE','Yahoo Finance',data_at=now.isoformat())
+    conc=concentrate_proxy(shared_copper)
+    if conc.get('concentrateTightnessProxy') is None: conc=lkg_or_unavailable('concentrate','Yahoo Finance',max_age_h=8) or conc
+    else: RUNTIME.mark('concentrate','LIVE','Yahoo Finance',data_at=now.isoformat())
+
+    if is_due('supply',1):
+        try: dis=disruptions()
+        except Exception: dis=lkg_or_unavailable('supply','Google News RSS',max_age_h=24) or {"supplyDisruptionScore":None,"events":[],"source":"Google News RSS"}
+        if dis.get('supplyDisruptionScore') is not None: RUNTIME.mark('supply','LIVE','Google News RSS',data_at=now.isoformat(),used=True,ttl_s=3600)
+    else:
+        dis=previous_section('supply') or disruptions(); RUNTIME.mark('supply','CACHE','Google News RSS',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),ttl_s=3600)
+
     proxy=free_inventory_proxy(curve,china,conc)
     total,chg13,pct=history_inventory(today,inv,proxy)
     inventory_mode='official' if pct is not None else 'free_proxy'
@@ -297,9 +490,16 @@ def main():
       "chinaDemandProxyScore":china.get('chinaDemandProxyScore'),"curveSpreadPct":curve.get('curveSpreadPct'),
       "curveScore":curve.get('curveScore'),"concentrateTightnessProxy":conc.get('concentrateTightnessProxy')
     }
+    if inventory_mode=='free_proxy':
+        RUNTIME.mark('physical','FALLBACK','Yahoo Finance',data_at=now.isoformat(),reliability=0.72,alternative='COMEX curve + China demand + concentrate proxy')
+    else:
+        RUNTIME.mark('physical','LIVE','LME/SHFE',data_at=today,reliability=1.0)
+
     payload={"schemaVersion":"1.0","generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,
              "physical":physical,"curve":curve,"cot":cot,"china":china,"concentrate":conc,"supply":dis,
+             "apiHealth":RUNTIME.health(),
              "notes":["No paid data used","Official inventory tonnage is never fabricated; a clearly-labelled free proxy score is used when official extraction fails","China spot premium and TC/RC are represented by clearly-labelled free proxies"]}
-    OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
-    print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt']},ensure_ascii=False))
+    OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
+    API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
+    print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
 if __name__=='__main__':main()
