@@ -36,13 +36,25 @@ def iso_now():
     return datetime.now(timezone.utc).isoformat()
 
 def parse_dt(v):
-    if not v: return None
-    try: return datetime.fromisoformat(str(v).replace('Z','+00:00'))
-    except Exception: return None
+    if not v:
+        return None
+    try:
+        d = datetime.fromisoformat(str(v).replace('Z', '+00:00'))
+        # Some providers (notably yfinance/pandas conversions) can yield an
+        # ISO timestamp without an explicit offset. Treat those timestamps as
+        # UTC so age calculations never mix offset-naive and offset-aware
+        # datetimes. Preserve aware timestamps and normalize them to UTC.
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        else:
+            d = d.astimezone(timezone.utc)
+        return d
+    except Exception:
+        return None
 
 def age_seconds(v):
-    d=parse_dt(v)
-    return max(0.0,(datetime.now(timezone.utc)-d).total_seconds()) if d else None
+    d = parse_dt(v)
+    return max(0.0, (datetime.now(timezone.utc) - d).total_seconds()) if d else None
 
 def reliability_for(state, age_s=None, ttl_s=None, fallback_quality=0.8):
     if state == 'LIVE': return 1.0
