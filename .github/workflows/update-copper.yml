@@ -3,10 +3,14 @@ name: Update Copper Fundamentals
 on:
   workflow_dispatch:
   schedule:
-    # Market-data workflow: query live market sources every run on weekdays.
-    - cron: '10,40 * * * 1-5'
-    # Weekend health/LKG refresh without hammering market APIs while markets are mostly closed.
-    - cron: '25 */6 * * 0,6'
+    # Weekdays: approximately every 3h30m. GitHub cron cannot express an
+    # exact 210-minute interval across a 24-hour boundary, so these two
+    # schedules alternate :20 / :50 and preserve 3h30m spacing through most
+    # of the day; the UTC day boundary has one 3-hour gap.
+    - cron: '20 0,7,14,21 * * 1-5'
+    - cron: '50 3,10,17 * * 1-5'
+    # Weekends: slower refresh to reduce unnecessary market/API traffic.
+    - cron: '20 */8 * * 0,6'
 
 permissions:
   contents: write
