@@ -1,63 +1,123 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-16T16:29:37.085407+00:00",
+  "generatedAt": "2026-08-16T16:44:04.804544+00:00",
   "sources": {
     "price": {
-      "status": "UNAVAILABLE",
+      "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-15T21:53:51.337166+00:00",
-      "ageSeconds": 66945.7,
+      "dataAt": "2026-08-14",
+      "ageSeconds": 233033.6,
       "usedInCalculation": true,
-      "reliability": 0,
+      "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:29:37.085407+00:00"
+      "checkedAt": "2026-08-16T16:43:53.616705+00:00"
     },
     "curve": {
-      "status": "UNAVAILABLE",
+      "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-15T21:53:51.337166+00:00",
-      "ageSeconds": 66945.7,
+      "dataAt": "2026-08-16T16:43:53.148433+00:00",
+      "ageSeconds": 4.8,
       "usedInCalculation": true,
-      "reliability": 0,
+      "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:29:37.085407+00:00"
+      "checkedAt": "2026-08-16T16:43:57.975026+00:00"
     },
     "cot": {
-      "status": "LKG",
+      "status": "CACHE",
       "source": "CFTC",
       "dataAt": "2026-08-11T00:00:00.000",
-      "ageSeconds": 66945.7,
+      "ageSeconds": 492238.0,
       "usedInCalculation": true,
-      "reliability": 0.85,
-      "fallback": "CFTC secondary endpoint",
+      "reliability": 1.0,
+      "fallback": null,
       "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
-      "checkedAt": "2026-08-16T16:29:37.085407+00:00"
+      "checkedAt": "2026-08-16T16:43:57.975084+00:00"
+    },
+    "inventory": {
+      "status": "FALLBACK",
+      "source": "Yahoo Finance",
+      "dataAt": "2026-08-16",
+      "ageSeconds": 60244.5,
+      "usedInCalculation": true,
+      "reliability": 0.72,
+      "fallback": "Free supply proxy",
+      "url": "https://finance.yahoo.com/quote/HG=F/",
+      "checkedAt": "2026-08-16T16:44:04.468952+00:00"
+    },
+    "china": {
+      "status": "LIVE",
+      "source": "Yahoo Finance",
+      "dataAt": "2026-08-16T16:43:53.148433+00:00",
+      "ageSeconds": 11.5,
+      "usedInCalculation": true,
+      "reliability": 1.0,
+      "fallback": null,
+      "url": "https://finance.yahoo.com/quote/HG=F/",
+      "checkedAt": "2026-08-16T16:44:04.622518+00:00"
+    },
+    "concentrate": {
+      "status": "LIVE",
+      "source": "Yahoo Finance",
+      "dataAt": "2026-08-16T16:43:53.148433+00:00",
+      "ageSeconds": 11.7,
+      "usedInCalculation": true,
+      "reliability": 1.0,
+      "fallback": null,
+      "url": "https://finance.yahoo.com/quote/HG=F/",
+      "checkedAt": "2026-08-16T16:44:04.801610+00:00"
+    },
+    "supply": {
+      "status": "CACHE",
+      "source": "Google News RSS",
+      "dataAt": "2026-08-15T21:53:51.337166+00:00",
+      "ageSeconds": 67813.5,
+      "usedInCalculation": true,
+      "reliability": 0.95,
+      "fallback": null,
+      "url": "https://news.google.com/",
+      "checkedAt": "2026-08-16T16:44:04.801667+00:00"
     },
     "physical": {
       "status": "FALLBACK",
-      "source": "Yahoo Finance proxy",
-      "dataAt": "2026-08-15T21:53:51.337166+00:00",
-      "ageSeconds": 66945.7,
+      "source": "Yahoo Finance",
+      "dataAt": "2026-08-16T16:43:53.148433+00:00",
+      "ageSeconds": 11.7,
       "usedInCalculation": true,
       "reliability": 0.72,
-      "fallback": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-      "url": "https://www.lme.com/en/market-data/reports-and-data/warehouse-and-stocks-reports",
-      "checkedAt": "2026-08-16T16:29:37.085407+00:00"
-    },
-    "supply": {
-      "status": "LKG",
-      "source": "Google News RSS",
-      "dataAt": "2026-08-15T21:53:51.337166+00:00",
-      "ageSeconds": 66945.7,
-      "usedInCalculation": true,
-      "reliability": 0.396,
-      "fallback": null,
-      "url": "https://news.google.com/",
-      "checkedAt": "2026-08-16T16:29:37.085407+00:00"
+      "fallback": "COMEX curve + China demand + concentrate proxy",
+      "url": "https://finance.yahoo.com/quote/HG=F/",
+      "checkedAt": "2026-08-16T16:44:04.802184+00:00"
     }
   },
-  "providers": {},
-  "note": "Seeded from previously committed output; no source is labelled LIVE until the patched workflow actually re-fetches it."
+  "providers": {
+    "Yahoo Finance": {
+      "network_calls": 4,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 0,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 0
+    },
+    "LME": {
+      "network_calls": 3,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 2,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 1
+    },
+    "SHFE": {
+      "network_calls": 2,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 0,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 0
+    }
+  }
 }
