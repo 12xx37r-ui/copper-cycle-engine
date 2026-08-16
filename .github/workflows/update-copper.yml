@@ -3,7 +3,10 @@ name: Update Copper Fundamentals
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 21 * * *'
+    # Market-data workflow: query live market sources every run on weekdays.
+    - cron: '10,40 * * * 1-5'
+    # Weekend health/LKG refresh without hammering market APIs while markets are mostly closed.
+    - cron: '25 */6 * * 0,6'
 
 permissions:
   contents: write
@@ -37,10 +40,12 @@ jobs:
       - name: Collect copper data
         run: python src/collect.py
 
-      - name: Validate output
-        run: python tests/validate_output.py
+      - name: Validate output and safety mode
+        run: |
+          python tests/validate_output.py
+          python tests/safety_mode_test.py
 
-      - name: Commit updated data
+      - name: Commit updated data and API health
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
