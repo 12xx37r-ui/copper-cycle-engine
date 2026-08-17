@@ -1,99 +1,108 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-16T16:44:04.804544+00:00",
+  "generatedAt": "2026-08-17T03:31:10.501083+00:00",
   "sources": {
     "price": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-14",
-      "ageSeconds": 233033.6,
+      "dataAt": "2026-08-16",
+      "ageSeconds": 99053.2,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:43:53.616705+00:00"
+      "checkedAt": "2026-08-17T03:30:53.209007+00:00"
     },
     "curve": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-16T16:43:53.148433+00:00",
-      "ageSeconds": 4.8,
+      "dataAt": "2026-08-17T03:30:52.706558+00:00",
+      "ageSeconds": 5.0,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:43:57.975026+00:00"
+      "checkedAt": "2026-08-17T03:30:57.708930+00:00"
     },
     "cot": {
-      "status": "CACHE",
+      "status": "LIVE",
       "source": "CFTC",
       "dataAt": "2026-08-11T00:00:00.000",
-      "ageSeconds": 492238.0,
+      "ageSeconds": 531059.8,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
-      "checkedAt": "2026-08-16T16:43:57.975084+00:00"
+      "checkedAt": "2026-08-17T03:30:59.762736+00:00"
     },
     "inventory": {
       "status": "FALLBACK",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-16",
-      "ageSeconds": 60244.5,
+      "dataAt": "2026-08-17",
+      "ageSeconds": 12669.9,
       "usedInCalculation": true,
       "reliability": 0.72,
       "fallback": "Free supply proxy",
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:44:04.468952+00:00"
+      "checkedAt": "2026-08-17T03:31:09.857629+00:00"
     },
     "china": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-16T16:43:53.148433+00:00",
-      "ageSeconds": 11.5,
+      "dataAt": "2026-08-17T03:30:52.706558+00:00",
+      "ageSeconds": 17.3,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:44:04.622518+00:00"
+      "checkedAt": "2026-08-17T03:31:09.994340+00:00"
     },
     "concentrate": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-16T16:43:53.148433+00:00",
-      "ageSeconds": 11.7,
+      "dataAt": "2026-08-17T03:30:52.706558+00:00",
+      "ageSeconds": 17.4,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:44:04.801610+00:00"
+      "checkedAt": "2026-08-17T03:31:10.122746+00:00"
     },
     "supply": {
-      "status": "CACHE",
+      "status": "LIVE",
       "source": "Google News RSS",
-      "dataAt": "2026-08-15T21:53:51.337166+00:00",
-      "ageSeconds": 67813.5,
+      "dataAt": "2026-08-17T03:30:52.706558+00:00",
+      "ageSeconds": 17.8,
       "usedInCalculation": true,
-      "reliability": 0.95,
+      "reliability": 1.0,
       "fallback": null,
       "url": "https://news.google.com/",
-      "checkedAt": "2026-08-16T16:44:04.801667+00:00"
+      "checkedAt": "2026-08-17T03:31:10.498286+00:00"
     },
     "physical": {
       "status": "FALLBACK",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-16T16:43:53.148433+00:00",
-      "ageSeconds": 11.7,
+      "dataAt": "2026-08-17T03:30:52.706558+00:00",
+      "ageSeconds": 17.8,
       "usedInCalculation": true,
       "reliability": 0.72,
       "fallback": "COMEX curve + China demand + concentrate proxy",
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-16T16:44:04.802184+00:00"
+      "checkedAt": "2026-08-17T03:31:10.498739+00:00"
     }
   },
   "providers": {
     "Yahoo Finance": {
       "network_calls": 4,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 0,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 0
+    },
+    "CFTC": {
+      "network_calls": 1,
       "deduplicated": 0,
       "cache_uses": 0,
       "retries": 0,
@@ -111,7 +120,16 @@
       "errors": 1
     },
     "SHFE": {
-      "network_calls": 2,
+      "network_calls": 4,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 2,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 1
+    },
+    "Google News RSS": {
+      "network_calls": 1,
       "deduplicated": 0,
       "cache_uses": 0,
       "retries": 0,
