@@ -5,12 +5,12 @@ on:
   schedule:
     # Weekdays: approximately every 3h30m. GitHub cron cannot express an
     # exact 210-minute interval across a 24-hour boundary, so these two
-    # schedules alternate :20 / :50 and preserve 3h30m spacing through most
+    # schedules alternate :07 / :37 and preserve 3h30m spacing through most
     # of the day; the UTC day boundary has one 3-hour gap.
-    - cron: '20 0,7,14,21 * * 1-5'
-    - cron: '50 3,10,17 * * 1-5'
+    - cron: '07 0,7,14,21 * * 1-5'
+    - cron: '37 3,10,17 * * 1-5'
     # Weekends: slower refresh to reduce unnecessary market/API traffic.
-    - cron: '20 */8 * * 0,6'
+    - cron: '07 */8 * * 0,6'
 
 permissions:
   contents: write
