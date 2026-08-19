@@ -88,4 +88,32 @@ try:
 finally:
     m.yahoo_history = orig_yahoo_history
 
-print("safety mode ok · V3 FXI-only China score")
+# Supply-disruption false-positive guard:
+# unrelated real-estate force-majeure headlines must never score.
+class _E:
+    def __init__(self,title):
+        self._d={'title':title,'link':'https://example.com/x'}
+    def get(self,k,default=None):
+        return self._d.get(k,default)
+
+class _Feed:
+    def __init__(self,entries):
+        self.entries=entries
+
+orig_parse=m.feedparser.parse
+orig_fetch=m.fetch
+try:
+    m.fetch=lambda *a,**k: type("Resp",(),{"content":b""})()
+    m.feedparser.parse=lambda *a,**k:_Feed([
+        _E("MahaRERA extends project completion deadlines citing force majeure"),
+        _E("Codelco copper mine strike forces suspension at El Teniente")
+    ])
+    s=m.disruptions()
+    assert s["eventCount"]==1, s
+    assert s["supplyDisruptionScore"]>0, s
+    assert "Codelco" in s["events"][0]["title"], s
+finally:
+    m.feedparser.parse=orig_parse
+    m.fetch=orig_fetch
+
+print("safety mode ok · V3 FXI-only + copper supply relevance")
