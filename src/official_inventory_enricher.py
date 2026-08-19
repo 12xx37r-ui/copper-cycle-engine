@@ -18,6 +18,7 @@ HISTORY_PATH = ROOT / "public/data/official_inventory_history.json"
 API_HEALTH_PATH = ROOT / "public/data/api_health.json"
 STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
+MIRROR_RETRY_HOURS = 6
 
 COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V3_20260819"
 MIN_PERCENTILE_OBS = 12
@@ -444,6 +445,18 @@ def _official_attempt_due(state: dict[str, Any]) -> bool:
     except Exception:
         return True
 
+def _mirror_attempt_due(state: dict[str, Any]) -> bool:
+    raw=state.get('lastMirrorAttemptAt')
+    if not raw:
+        return True
+    try:
+        dt=datetime.fromisoformat(str(raw).replace('Z','+00:00'))
+        if dt.tzinfo is None:
+            dt=dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc)-dt.astimezone(timezone.utc)).total_seconds() >= MIRROR_RETRY_HOURS*3600
+    except Exception:
+        return True
+
 def _read_history(path: Path = HISTORY_PATH) -> list[dict[str, Any]]:
     try:
         x = json.loads(path.read_text())
@@ -642,8 +655,17 @@ def run() -> dict[str, Any]:
     # GitHub Actions. First successful run backfills five years; subsequent runs
     # fetch only the current year and merge into the committed local history.
     old_mirror=[r for r in old if isinstance(r,dict) and r.get('basket')=='lme_mirror']
-    mirror_years = 0 if len(old_mirror) >= MIN_PERCENTILE_OBS else HISTORY_YEARS
-    mirror_rows, mirror_errors = collect_lme_mirror(years_back=mirror_years)
+    mirror_rows=[]; mirror_errors=[]
+    # Westmetall mirrors a daily LME stock series. Do not fetch it on every
+    # 30-minute workflow. Persisted history is enough between refresh windows.
+    if _mirror_attempt_due(state):
+        mirror_years = 0 if len(old_mirror) >= MIN_PERCENTILE_OBS else HISTORY_YEARS
+        mirror_rows, mirror_errors = collect_lme_mirror(years_back=mirror_years)
+        state['lastMirrorAttemptAt']=datetime.now(timezone.utc).isoformat()
+        state['lastMirrorErrors']=mirror_errors[-10:]
+        _write_state(state)
+    else:
+        mirror_errors=['LME mirror refresh cadence not due; using committed mirror history']
 
     lme_rows=[]; lme_errors=[]; shfe_current=None; shfe_errors=[]; comex_current=None; comex_errors=[]
     if _official_attempt_due(state):
