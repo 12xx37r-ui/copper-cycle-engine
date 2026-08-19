@@ -544,7 +544,7 @@ def main():
         RUNTIME.mark('physical','UNAVAILABLE','LME/SHFE',data_at=today,reliability=0.0,alternative='diagnostic free supply proxy exists but is not official inventory')
         RUNTIME.mark('free_supply_proxy','FALLBACK','Yahoo Finance',data_at=now.isoformat(),used=False,reliability=0.70,alternative='COMEX curve + FXI China proxy + concentrate proxy')
 
-    payload={"schemaVersion":"1.1","modelVersion":ENGINE_MODEL_VERSION,"generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,
+    payload={"schemaVersion":"1.0","modelVersion":ENGINE_MODEL_VERSION,"generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,
              "physical":physical,"curve":curve,"cot":cot,"china":china,"concentrate":conc,"supply":dis,
              "apiHealth":RUNTIME.health(),
              "notes":["No paid data used","Official LME/SHFE inventory is never replaced by a proxy in official inventory fields",
