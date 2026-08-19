@@ -35,11 +35,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Collect copper data
+      - name: Collect copper data and enrich inventory evidence
         run: python src/collect.py
-
-      - name: Enrich official inventory indicators
-        run: python src/official_inventory_enricher.py
 
       - name: Validate output and safety mode
         run: |
@@ -47,6 +44,19 @@ jobs:
           python tests/safety_mode_test.py
           python tests/copper_v3_test.py
           python tests/official_inventory_test.py
+
+      - name: Print four target indicators
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('public/data/copper_fundamentals.json').read_text())
+          print(json.dumps({
+            'officialIndicators': d.get('officialIndicators'),
+            'officialInventoryDerived': (d.get('physical') or {}).get('officialInventoryDerived'),
+            'officialInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived')
+          }, ensure_ascii=False, indent=2))
+          PY
 
       - name: Commit updated data and API health
         run: |
