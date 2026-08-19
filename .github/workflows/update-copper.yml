@@ -3,11 +3,8 @@ name: Update Copper Fundamentals
 on:
   workflow_dispatch:
   schedule:
-    # Weekdays: every 30 minutes. Slow sources are cadence-gated inside collect.py.
     - cron: '*/30 * * * 1-5'
-    # Weekends: every 6 hours.
     - cron: '20 */6 * * 0,6'
-
 
 permissions:
   contents: write
@@ -19,7 +16,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,11 +38,15 @@ jobs:
       - name: Collect copper data
         run: python src/collect.py
 
+      - name: Enrich official inventory indicators
+        run: python src/official_inventory_enricher.py
+
       - name: Validate output and safety mode
         run: |
           python tests/validate_output.py
           python tests/safety_mode_test.py
           python tests/copper_v3_test.py
+          python tests/official_inventory_test.py
 
       - name: Commit updated data and API health
         run: |
