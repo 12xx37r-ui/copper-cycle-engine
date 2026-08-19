@@ -1,0 +1,27 @@
+{
+  "savedAt": "2026-08-19T13:58:50.182194+00:00",
+  "generatedAt": "2026-08-19T13:58:42.665803+00:00",
+  "supply": {
+    "supplyDisruptionScore": 0,
+    "events": [],
+    "eventCount": 0,
+    "rawNetImpact": 0,
+    "staleRejected": 76,
+    "undatedRejected": 0,
+    "windowDays": 14,
+    "filterVersion": "COPPER_SUPPLY_FILTER_V4_20260819",
+    "source": "Google News RSS; strict 14-day publication gate + copper-asset clustering + age decay; not tonnage estimate"
+  },
+  "supplyIndicator": 0,
+  "health": {
+    "status": "LIVE",
+    "source": "Google News RSS",
+    "dataAt": "2026-08-19T13:58:42.665803+00:00",
+    "ageSeconds": 6.4,
+    "usedInCalculation": true,
+    "reliability": 0.75,
+    "fallback": "event proxy; not verified disrupted tonnage",
+    "url": "https://news.google.com/",
+    "checkedAt": "2026-08-19T13:58:49.087349+00:00"
+  }
+}

@@ -12,5 +12,7 @@
     "SHFE parsed no copper total: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
     "SHFE parsed no copper total: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
     "CME/COMEX HTTPError"
-  ]
+  ],
+  "lastMirrorAttemptAt": "2026-08-19T13:58:50.070095+00:00",
+  "lastMirrorErrors": []
 }

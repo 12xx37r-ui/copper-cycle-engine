@@ -1,0 +1,82 @@
+{
+  "savedAt": "2026-08-19T13:58:50.182009+00:00",
+  "generatedAt": "2026-08-19T13:58:42.665803+00:00",
+  "physical": {
+    "lmeInventoryTonnes": null,
+    "shfeInventoryTonnes": null,
+    "sources": {},
+    "statuses": {
+      "lme_daily": "daily route failed: HTTPError",
+      "lme": "official daily and monthly LME stock routes unavailable",
+      "shfe": "official weekly inventory unavailable or blocked by SHFE anti-bot/WAF"
+    },
+    "collectorVersion": "COPPER_INVENTORY_V3_20260819",
+    "dataAt": {},
+    "cadence": {},
+    "lmeMonthlyHistory": null,
+    "visibleInventoryTonnes": 223550.0,
+    "inventoryChangePct13w": -43.35845949198708,
+    "inventoryScore": 73.64760432766616,
+    "inventoryMode": "exchange_mirror_lme",
+    "officialObservationCount": 0,
+    "inventoryDataAt": "2026-08-18",
+    "inventoryCadence": {},
+    "freeSupplyProxyScore": 54.95196081708285,
+    "freeSupplyProxyTrendEquivalent": 2.9711764902497095,
+    "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
+    "chinaDemandProxyScore": 60.58669888311252,
+    "curveSpreadPct": 0.19282389692285573,
+    "curveScore": 54.82059742307139,
+    "concentrateTightnessProxy": 21.41164114759544,
+    "officialInventoryDerived": {
+      "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V3_20260819",
+      "status": "ok",
+      "basket": "lme_mirror",
+      "evidenceClass": "exchange_mirror",
+      "officialSourceAvailable": false,
+      "dataAt": "2026-08-18",
+      "cadence": "daily",
+      "source": "Westmetall mirror of LME Copper stock",
+      "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
+      "observationCount": 1294,
+      "visibleInventoryPercentile": 73.64760432766616,
+      "inventoryChangePct13w": -43.35845949198708,
+      "inventoryTrendScore13w": 100.0,
+      "prior91dDate": "2026-05-19",
+      "currentComponents": {
+        "lme": 223550.0
+      },
+      "errors": [
+        "official exchange retry cadence not due; using committed history/current mirror"
+      ]
+    },
+    "inventoryObservationCount": 1294,
+    "inventoryEvidenceClass": "exchange_mirror"
+  },
+  "officialIndicators": {
+    "officialVisibleInventoryPercentile": 73.64760432766616,
+    "officialInventoryChangePct13w": -43.35845949198708,
+    "officialVisibleInventoryTrend13w": 100.0,
+    "mineSupplyDisruption": 0,
+    "inventoryBasket": "lme_mirror",
+    "inventoryDataAt": "2026-08-18",
+    "inventoryObservationCount": 1294,
+    "inventoryStatus": "ok",
+    "inventoryEvidenceClass": "exchange_mirror",
+    "officialSourceAvailable": false,
+    "inventorySource": "Westmetall mirror of LME Copper stock",
+    "inventorySourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
+    "supplySource": "Google News RSS; strict 14-day publication gate + copper-asset clustering + age decay; not tonnage estimate",
+    "supplyEventCount": 0
+  },
+  "health": {
+    "status": "FALLBACK",
+    "source": "Westmetall mirror of LME Copper stock",
+    "dataAt": "2026-08-18",
+    "usedInCalculation": true,
+    "reliability": 0.8,
+    "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
+    "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
+    "checkedAt": "2026-08-19T13:58:50.081947+00:00"
+  }
+}
