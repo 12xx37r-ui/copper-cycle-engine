@@ -1,7 +1,6 @@
 from __future__ import annotations
 import json, math, os, re, time, random, hashlib, io
 from datetime import date, datetime, timedelta, timezone
-from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse, urljoin
@@ -784,10 +783,12 @@ def history_inventory(today, inv, proxy):
       (num(x.get('lme')) is not None or num(x.get('shfe')) is not None)
     ]
     if len(official_existing) < 4:
+        # Backfill network access belongs exclusively to inventory_sources(),
+        # which is cadence-gated. history_inventory() must remain pure/local;
+        # otherwise a blocked LME endpoint gets hammered every workflow run.
         seeded=(inv.get('lmeMonthlyHistory') or []) if isinstance(inv,dict) else []
-        if not seeded:
-            seeded=_lme_monthly_stock_history(max_reports=5)
-        data=_merge_official_backfill(data,seeded)
+        if seeded:
+            data=_merge_official_backfill(data,seeded)
 
     lme=num(inv.get('lmeInventoryTonnes'))
     shfe=num(inv.get('shfeInventoryTonnes'))
@@ -957,7 +958,7 @@ def main():
                       "Free supply proxy is diagnostic-only when official inventory is unavailable",
                       "China cycle score uses FXI only; copper price momentum is diagnostic-only",
                       "13-week inventory change uses a calendar 91-day lag rather than observation count",
-                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked","Google News supply events are hard-filtered by parsed publication date to the last 14 days because RSS query windows can return stale articles","Unauthenticated LME/SHFE official inventory may remain unavailable because LME report downloads can require account access and SHFE may present anti-bot verification; the engine never substitutes a proxy into official fields"]}
+                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Unavailable official inventory is retried on a 6-hour cadence until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked","Google News supply events are hard-filtered by parsed publication date to the last 14 days because RSS query windows can return stale articles","Unauthenticated LME/SHFE official inventory may remain unavailable because LME report downloads can require account access and SHFE may present anti-bot verification; the engine never substitutes a proxy into official fields"]}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
     print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
