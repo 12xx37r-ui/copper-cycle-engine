@@ -152,3 +152,43 @@ finally:
     m.fetch=orig_fetch2
 
 print("safety mode ok · V3 supply asset clustering")
+
+
+# V4 supply-date regression: stale articles must be rejected even if Google RSS
+# returns them for a `when:14d` query.
+from datetime import datetime, timezone, timedelta
+from email.utils import format_datetime
+
+class _E3:
+    def __init__(self,title,published):
+        self._d={'title':title,'link':'https://example.com/'+str(abs(hash(title))),
+                 'published':published}
+    def get(self,k,default=None):
+        return self._d.get(k,default)
+
+class _Feed3:
+    def __init__(self,entries):
+        self.entries=entries
+
+orig_parse3=m.feedparser.parse
+orig_fetch3=m.fetch
+try:
+    now=datetime.now(timezone.utc)
+    fresh=format_datetime(now-timedelta(days=1))
+    stale=format_datetime(now-timedelta(days=100))
+    m.fetch=lambda *a,**k:type("Resp",(),{"content":b""})()
+    m.feedparser.parse=lambda *a,**k:_Feed3([
+        _E3("Codelco halts El Teniente copper mine over strike",fresh),
+        _E3("Codelco halts Chuquicamata copper mine over strike",stale)
+    ])
+    s3=m.disruptions()
+    titles=' | '.join(x['title'] for x in s3['events']).lower()
+    assert 'el teniente' in titles, s3
+    assert 'chuquicamata' not in titles, s3
+    assert s3['staleRejected']>=1, s3
+    assert s3['windowDays']==14, s3
+finally:
+    m.feedparser.parse=orig_parse3
+    m.fetch=orig_fetch3
+
+print("safety mode ok · V4 strict 14-day supply window")
