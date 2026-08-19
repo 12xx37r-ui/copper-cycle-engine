@@ -9,9 +9,11 @@ on:
 permissions:
   contents: write
 
+# Never cancel a healthy run midway just because the next 30-minute tick arrived.
+# Queue the next run instead; partial output is never published.
 concurrency:
   group: copper-fundamentals
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -26,6 +28,12 @@ jobs:
       - name: Sync latest main
         run: git pull --rebase origin main
 
+      - name: Preserve last published payload for this run
+        run: |
+          mkdir -p .run-backup
+          cp -f public/data/copper_fundamentals.json .run-backup/copper_fundamentals.json 2>/dev/null || true
+          cp -f public/data/api_health.json .run-backup/api_health.json 2>/dev/null || true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -38,12 +46,16 @@ jobs:
       - name: Collect copper data and enrich inventory evidence
         run: python src/collect.py
 
+      - name: Apply bounded last-good publish guard
+        run: python src/finalize_guard.py
+
       - name: Validate output and safety mode
         run: |
           python tests/validate_output.py
           python tests/safety_mode_test.py
           python tests/copper_v3_test.py
           python tests/official_inventory_test.py
+          python tests/finalize_guard_test.py
 
       - name: Print four target indicators
         run: |
@@ -54,7 +66,8 @@ jobs:
           print(json.dumps({
             'officialIndicators': d.get('officialIndicators'),
             'officialInventoryDerived': (d.get('physical') or {}).get('officialInventoryDerived'),
-            'officialInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived')
+            'officialInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived'),
+            'supplyHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('supply')
           }, ensure_ascii=False, indent=2))
           PY
 
@@ -67,5 +80,6 @@ jobs:
             echo "No data changes"
           else
             git commit -m "data: update copper fundamentals"
+            git pull --rebase origin main
             git push origin main
           fi
