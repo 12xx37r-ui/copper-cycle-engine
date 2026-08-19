@@ -118,3 +118,37 @@ finally:
     m.fetch=orig_fetch
 
 print("safety mode ok · V3 FXI-only + copper supply relevance")
+
+
+# V3 supply filter regression: ambiguous "Freeport LNG" must be rejected and
+# duplicate articles for the same copper asset must collapse to one event.
+class _E2:
+    def __init__(self,title):
+        self._d={'title':title,'link':'https://example.com/'+str(abs(hash(title)))}
+    def get(self,k,default=None):
+        return self._d.get(k,default)
+
+class _Feed2:
+    def __init__(self,entries):
+        self.entries=entries
+
+orig_parse2=m.feedparser.parse
+orig_fetch2=m.fetch
+try:
+    m.fetch=lambda *a,**k:type("Resp",(),{"content":b""})()
+    m.feedparser.parse=lambda *a,**k:_Feed2([
+        _E2("Freeport LNG Restarts Texas Export Plant After Power-Related Shutdown"),
+        _E2("Cobre Panama restart nears as workers return to copper mine"),
+        _E2("First Quantum adds jobs as Cobre Panama restart nears"),
+        _E2("Freeport Indonesia pushes back Grasberg copper restart by a year")
+    ])
+    s2=m.disruptions()
+    titles=' | '.join(x['title'] for x in s2['events']).lower()
+    assert 'freeport lng' not in titles, s2
+    assert s2['eventCount']==2, s2
+    assert s2['filterVersion']==m.SUPPLY_FILTER_VERSION, s2
+finally:
+    m.feedparser.parse=orig_parse2
+    m.fetch=orig_fetch2
+
+print("safety mode ok · V3 supply asset clustering")
