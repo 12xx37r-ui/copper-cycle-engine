@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-19T15:58:29.647598+00:00",
-  "generatedAt": "2026-08-19T15:58:23.033887+00:00",
+  "savedAt": "2026-08-19T17:00:44.461641+00:00",
+  "generatedAt": "2026-08-19T17:00:38.800453+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,13 +21,13 @@
     "officialObservationCount": 0,
     "inventoryDataAt": "2026-08-18",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 70.85090226961167,
-    "freeSupplyProxyTrendEquivalent": 12.510541361766998,
+    "freeSupplyProxyScore": 71.08942085277315,
+    "freeSupplyProxyTrendEquivalent": 12.653652511663887,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 61.02235880135856,
+    "chinaDemandProxyScore": 59.09615250945497,
     "curveSpreadPct": 1.4474826179028621,
     "curveScore": 86.18706544757156,
-    "concentrateTightnessProxy": 19.67961406883272,
+    "concentrateTightnessProxy": 21.376330590880727,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V3_20260819",
       "status": "ok",
@@ -78,6 +78,6 @@
     "reliability": 0.8,
     "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
     "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-    "checkedAt": "2026-08-19T15:58:29.543173+00:00"
+    "checkedAt": "2026-08-19T17:00:44.342370+00:00"
   }
 }
