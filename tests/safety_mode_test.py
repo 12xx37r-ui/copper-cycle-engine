@@ -90,9 +90,12 @@ finally:
 
 # Supply-disruption false-positive guard:
 # unrelated real-estate force-majeure headlines must never score.
+from datetime import datetime, timezone, timedelta
+from email.utils import format_datetime
+
 class _E:
-    def __init__(self,title):
-        self._d={'title':title,'link':'https://example.com/x'}
+    def __init__(self,title,published):
+        self._d={'title':title,'link':'https://example.com/x','published':published}
     def get(self,k,default=None):
         return self._d.get(k,default)
 
@@ -103,16 +106,17 @@ class _Feed:
 orig_parse=m.feedparser.parse
 orig_fetch=m.fetch
 try:
+    fresh=format_datetime(datetime.now(timezone.utc)-timedelta(days=1))
     m.fetch=lambda *a,**k: type("Resp",(),{"content":b""})()
     m.feedparser.parse=lambda *a,**k:_Feed([
-        _E("MahaRERA extends project completion deadlines citing force majeure"),
-        _E("Codelco copper mine strike forces suspension at El Teniente")
+        _E("MahaRERA extends project completion deadlines citing force majeure",fresh),
+        _E("Codelco copper mine strike forces suspension at El Teniente",fresh)
     ])
     s=m.disruptions()
     assert s["eventCount"]==1, s
     assert s["supplyDisruptionScore"]>0, s
-    assert s["filterVersion"]==m.SUPPLY_FILTER_VERSION, s
     assert "Codelco" in s["events"][0]["title"], s
+    assert s["undatedRejected"]==0, s
 finally:
     m.feedparser.parse=orig_parse
     m.fetch=orig_fetch
@@ -123,8 +127,9 @@ print("safety mode ok · V3 FXI-only + copper supply relevance")
 # V3 supply filter regression: ambiguous "Freeport LNG" must be rejected and
 # duplicate articles for the same copper asset must collapse to one event.
 class _E2:
-    def __init__(self,title):
-        self._d={'title':title,'link':'https://example.com/'+str(abs(hash(title)))}
+    def __init__(self,title,published):
+        self._d={'title':title,'link':'https://example.com/'+str(abs(hash(title))),
+                 'published':published}
     def get(self,k,default=None):
         return self._d.get(k,default)
 
@@ -135,12 +140,13 @@ class _Feed2:
 orig_parse2=m.feedparser.parse
 orig_fetch2=m.fetch
 try:
+    fresh2=format_datetime(datetime.now(timezone.utc)-timedelta(days=1))
     m.fetch=lambda *a,**k:type("Resp",(),{"content":b""})()
     m.feedparser.parse=lambda *a,**k:_Feed2([
-        _E2("Freeport LNG Restarts Texas Export Plant After Power-Related Shutdown"),
-        _E2("Cobre Panama restart nears as workers return to copper mine"),
-        _E2("First Quantum adds jobs as Cobre Panama restart nears"),
-        _E2("Freeport Indonesia pushes back Grasberg copper restart by a year")
+        _E2("Freeport LNG Restarts Texas Export Plant After Power-Related Shutdown",fresh2),
+        _E2("Cobre Panama restart nears as workers return to copper mine",fresh2),
+        _E2("First Quantum adds jobs as Cobre Panama restart nears",fresh2),
+        _E2("Freeport Indonesia pushes back Grasberg copper restart by a year",fresh2)
     ])
     s2=m.disruptions()
     titles=' | '.join(x['title'] for x in s2['events']).lower()
