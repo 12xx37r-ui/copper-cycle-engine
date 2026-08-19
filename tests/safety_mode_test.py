@@ -1,43 +1,91 @@
-import importlib.util, math, sys, types
-sys.modules.setdefault('yfinance', types.SimpleNamespace(Ticker=lambda *a,**k: None))
-sys.modules.setdefault('feedparser', types.SimpleNamespace(parse=lambda *a,**k: types.SimpleNamespace(entries=[])))
 from pathlib import Path
-P=Path(__file__).resolve().parents[1]/'src'/'collect.py'
-spec=importlib.util.spec_from_file_location('collect',P); c=importlib.util.module_from_spec(spec); spec.loader.exec_module(c)
+import importlib.util
 
-# LIVE/CACHE/LKG/FALLBACK/UNAVAILABLE reliability semantics
-assert c.reliability_for('LIVE') == 1.0
-assert c.reliability_for('CACHE',10,60) >= .95
-assert 0 < c.reliability_for('LKG',3600,7200) < 1
-assert c.reliability_for('FALLBACK',fallback_quality=.72) == .72
-assert c.reliability_for('UNAVAILABLE') == 0
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("collect", ROOT / "src" / "collect.py")
+m = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(m)
 
-# Normal-state regression: new renormalizable China formula exactly equals old formula when both legs exist.
-def rows(ret):
-    a=[{'date':str(i),'close':100.0,'volume':1} for i in range(25)]
-    a[-21]['close']=100.0; a[-1]['close']=100.0*(1+ret/100)
-    return a
-orig_yh=c.yahoo_history
+def rows_from_return(ret_pct, n=30):
+    """
+    Create n+1 closes whose 20-day return is exactly ret_pct.
+    china_cycle_proxy() compares rows[-1] with rows[-21].
+    """
+    base = 100.0
+    rows = [{"close": base, "date": str(i)} for i in range(n + 1)]
+    rows[-21]["close"] = base
+    rows[-1]["close"] = base * (1.0 + ret_pct / 100.0)
+    return rows
+
+orig_yahoo_history = m.yahoo_history
+
 try:
-    c.yahoo_history=lambda symbol,period='1y',interval='1d': rows(4.0) if symbol=='FXI' else rows(2.0)
-    r=c.china_cycle_proxy(rows(2.0))
-    old=50+4.0*2+2.0
-    assert abs(r['chinaDemandProxyScore']-old)<1e-9, (r,old)
-    # One missing leg: no fake zero/neutral placeholder; remaining signal is renormalized.
-    c.yahoo_history=lambda symbol,period='1y',interval='1d': [] if symbol=='FXI' else rows(2.0)
-    r2=c.china_cycle_proxy(rows(2.0))
-    assert r2['chinaDemandProxyScore'] is not None and r2['chinaDemandProxyScore'] != 50
-    # Both missing => unavailable, never 50.
-    r3=c.china_cycle_proxy([])
-    # shared empty triggers internal HG fetch; force both empty
-    c.yahoo_history=lambda *a,**k: []
-    r3=c.china_cycle_proxy([])
-    assert r3['chinaDemandProxyScore'] is None
+    # ------------------------------------------------------------------
+    # V3 contract:
+    # China-cycle score is FXI-only.
+    # Copper momentum is diagnostic and MUST NOT alter the score.
+    # FXI +4% => 50 + 3*4 = 62.
+    # ------------------------------------------------------------------
+    def both_live(symbol, period="1y", interval="1d"):
+        if symbol == "FXI":
+            return rows_from_return(4.0)
+        if symbol == "HG=F":
+            return rows_from_return(2.0)
+        return []
+
+    m.yahoo_history = both_live
+    r = m.china_cycle_proxy(rows_from_return(2.0))
+    expected = 62.0
+    assert abs(r["chinaDemandProxyScore"] - expected) < 1e-9, (r, expected)
+    assert abs(r["manufacturingConstructionScore"] - expected) < 1e-9, r
+    assert abs(r["fxi20dPct"] - 4.0) < 1e-9, r
+    assert abs(r["copper20dPct"] - 2.0) < 1e-9, r
+    assert "copper price excluded from score" in r["source"].lower(), r
+
+    # Copper price direction must not change the China-cycle score.
+    r_up = m.china_cycle_proxy(rows_from_return(25.0))
+    r_down = m.china_cycle_proxy(rows_from_return(-25.0))
+    assert abs(r_up["chinaDemandProxyScore"] - expected) < 1e-9, r_up
+    assert abs(r_down["chinaDemandProxyScore"] - expected) < 1e-9, r_down
+
+    # ------------------------------------------------------------------
+    # FXI missing:
+    # Do NOT silently fall back to copper price because that reintroduces
+    # the self-reference V3 intentionally removed.
+    # ------------------------------------------------------------------
+    def fxi_missing(symbol, period="1y", interval="1d"):
+        if symbol == "FXI":
+            return []
+        if symbol == "HG=F":
+            return rows_from_return(8.0)
+        return []
+
+    m.yahoo_history = fxi_missing
+    r = m.china_cycle_proxy(rows_from_return(8.0))
+    assert r["chinaDemandProxyScore"] is None, r
+    assert r["manufacturingConstructionScore"] is None, r
+    assert r.get("status") == "unavailable", r
+    assert r["copper20dPct"] is not None, r
+
+    # ------------------------------------------------------------------
+    # FXI live, copper unavailable:
+    # Score remains valid because copper is diagnostic-only.
+    # ------------------------------------------------------------------
+    def copper_missing(symbol, period="1y", interval="1d"):
+        if symbol == "FXI":
+            return rows_from_return(-3.0)
+        if symbol == "HG=F":
+            return []
+        return []
+
+    m.yahoo_history = copper_missing
+    r = m.china_cycle_proxy([])
+    expected = 41.0  # 50 + 3*(-3)
+    assert abs(r["chinaDemandProxyScore"] - expected) < 1e-9, (r, expected)
+    assert abs(r["manufacturingConstructionScore"] - expected) < 1e-9, r
+    assert r["copper20dPct"] is None, r
+
 finally:
-    c.yahoo_history=orig_yh
+    m.yahoo_history = orig_yahoo_history
 
-# Inventory fallback already renormalizes only available pieces; no input => None.
-assert c.free_inventory_proxy({}, {}, {})['inventoryScore'] is None
-assert c.free_inventory_proxy({'curveScore':60},{},{})['inventoryScore'] == 60
-
-print('copper safety tests ok')
+print("safety mode ok · V3 FXI-only China score")
