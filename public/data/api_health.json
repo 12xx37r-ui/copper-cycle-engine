@@ -1,105 +1,105 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-19T18:00:41.576056+00:00",
+  "generatedAt": "2026-08-19T19:42:54.045579+00:00",
   "sources": {
     "price": {
       "status": "LIVE",
       "source": "Yahoo Finance",
       "dataAt": "2026-08-19",
-      "ageSeconds": 64840.2,
+      "ageSeconds": 70972.3,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-19T18:00:40.206929+00:00"
+      "checkedAt": "2026-08-19T19:42:52.285581+00:00"
     },
     "curve": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-19T18:00:39.681793+00:00",
-      "ageSeconds": 1.7,
+      "dataAt": "2026-08-19T19:42:51.860976+00:00",
+      "ageSeconds": 1.4,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-19T18:00:41.345820+00:00"
+      "checkedAt": "2026-08-19T19:42:53.274895+00:00"
     },
     "cot": {
       "status": "CACHE",
       "source": "CFTC",
       "dataAt": "2026-08-11T00:00:00.000",
-      "ageSeconds": 756041.3,
+      "ageSeconds": 762173.3,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
-      "checkedAt": "2026-08-19T18:00:41.345873+00:00"
+      "checkedAt": "2026-08-19T19:42:53.274947+00:00"
     },
     "inventory": {
       "status": "UNAVAILABLE",
       "source": "LME/SHFE",
-      "dataAt": "2026-08-19T17:00:38.800453+00:00",
-      "ageSeconds": 3602.5,
+      "dataAt": "2026-08-19T18:00:39.681793+00:00",
+      "ageSeconds": 6133.6,
       "usedInCalculation": false,
       "reliability": 0.0,
       "fallback": "official exchange access remains blocked/unavailable; next retry cadence 6h",
       "url": null,
-      "checkedAt": "2026-08-19T18:00:41.345941+00:00"
+      "checkedAt": "2026-08-19T19:42:53.275013+00:00"
     },
     "china": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-19T18:00:39.681793+00:00",
-      "ageSeconds": 1.8,
+      "dataAt": "2026-08-19T19:42:51.860976+00:00",
+      "ageSeconds": 1.5,
       "usedInCalculation": true,
       "reliability": 1.0,
       "fallback": null,
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-19T18:00:41.467310+00:00"
+      "checkedAt": "2026-08-19T19:42:53.394413+00:00"
     },
     "concentrate": {
       "status": "LIVE",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-19T18:00:39.681793+00:00",
-      "ageSeconds": 1.9,
+      "dataAt": "2026-08-19T19:42:51.860976+00:00",
+      "ageSeconds": 1.7,
       "usedInCalculation": false,
       "reliability": 0.7,
       "fallback": "diagnostic-only; excluded from V3 score",
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-19T18:00:41.575520+00:00"
+      "checkedAt": "2026-08-19T19:42:53.527565+00:00"
     },
     "supply": {
-      "status": "CACHE",
+      "status": "LIVE",
       "source": "Google News RSS",
-      "dataAt": "2026-08-19T17:00:38.800453+00:00",
-      "ageSeconds": 3602.8,
+      "dataAt": "2026-08-19T19:42:51.860976+00:00",
+      "ageSeconds": 2.2,
       "usedInCalculation": true,
-      "reliability": 0.7,
-      "fallback": "cached event proxy; not verified disrupted tonnage",
+      "reliability": 0.75,
+      "fallback": "event proxy; not verified disrupted tonnage",
       "url": "https://news.google.com/",
-      "checkedAt": "2026-08-19T18:00:41.575558+00:00"
+      "checkedAt": "2026-08-19T19:42:54.045111+00:00"
     },
     "physical": {
       "status": "UNAVAILABLE",
       "source": "LME/SHFE",
       "dataAt": "2026-08-19",
-      "ageSeconds": 64841.6,
+      "ageSeconds": 70974.0,
       "usedInCalculation": false,
       "reliability": 0.0,
       "fallback": "diagnostic free supply proxy exists but is not official inventory",
       "url": null,
-      "checkedAt": "2026-08-19T18:00:41.576038+00:00"
+      "checkedAt": "2026-08-19T19:42:54.045561+00:00"
     },
     "free_supply_proxy": {
       "status": "FALLBACK",
       "source": "Yahoo Finance",
-      "dataAt": "2026-08-19T18:00:39.681793+00:00",
-      "ageSeconds": 1.9,
+      "dataAt": "2026-08-19T19:42:51.860976+00:00",
+      "ageSeconds": 2.2,
       "usedInCalculation": false,
       "reliability": 0.7,
       "fallback": "COMEX curve + FXI China proxy + concentrate proxy",
       "url": "https://finance.yahoo.com/quote/HG=F/",
-      "checkedAt": "2026-08-19T18:00:41.576051+00:00"
+      "checkedAt": "2026-08-19T19:42:54.045574+00:00"
     },
     "official_inventory_derived": {
       "status": "FALLBACK",
@@ -109,12 +109,21 @@
       "reliability": 0.8,
       "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
       "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-      "checkedAt": "2026-08-19T18:00:41.605967+00:00"
+      "checkedAt": "2026-08-19T19:42:58.889153+00:00"
     }
   },
   "providers": {
     "Yahoo Finance": {
       "network_calls": 4,
+      "deduplicated": 0,
+      "cache_uses": 0,
+      "retries": 0,
+      "http_429": 0,
+      "timeouts": 0,
+      "errors": 0
+    },
+    "Google News RSS": {
+      "network_calls": 1,
       "deduplicated": 0,
       "cache_uses": 0,
       "retries": 0,

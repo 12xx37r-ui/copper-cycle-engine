@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-19T18:00:41.721281+00:00",
-  "generatedAt": "2026-08-19T18:00:39.681793+00:00",
+  "savedAt": "2026-08-19T19:42:59.018364+00:00",
+  "generatedAt": "2026-08-19T19:42:51.860976+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,13 +21,13 @@
     "officialObservationCount": 0,
     "inventoryDataAt": "2026-08-18",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 67.1282753466696,
-    "freeSupplyProxyTrendEquivalent": 10.276965208001757,
+    "freeSupplyProxyScore": 66.90268104720154,
+    "freeSupplyProxyTrendEquivalent": 10.141608628320924,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 60.67381757127326,
+    "chinaDemandProxyScore": 60.93524011319782,
     "curveSpreadPct": 1.1714795306584813,
     "curveScore": 79.28698826646203,
-    "concentrateTightnessProxy": 21.565367575897223,
+    "concentrateTightnessProxy": 22.301205260350645,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V3_20260819",
       "status": "ok",
@@ -47,7 +47,17 @@
         "lme": 223550.0
       },
       "errors": [
-        "official exchange retry cadence not due; using committed history/current mirror",
+        "2026-07 lme_stocks_summary: parsed no copper total",
+        "2026-07 lme_warehouse_queue: parsed no copper total",
+        "2026-06 lme_stocks_summary: parsed no copper total",
+        "2026-06 lme_warehouse_queue: parsed no copper total",
+        "2026-05 lme_stocks_summary: parsed no copper total",
+        "2026-05 lme_warehouse_queue: parsed no copper total",
+        "2026-04 lme_stocks_summary: parsed no copper total",
+        "2026-04 lme_warehouse_queue: parsed no copper total",
+        "SHFE parsed no copper total: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
+        "SHFE parsed no copper total: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
+        "CME/COMEX HTTPError",
         "LME mirror refresh cadence not due; using committed mirror history"
       ]
     },
@@ -78,6 +88,6 @@
     "reliability": 0.8,
     "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
     "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-    "checkedAt": "2026-08-19T18:00:41.605967+00:00"
+    "checkedAt": "2026-08-19T19:42:58.889153+00:00"
   }
 }
