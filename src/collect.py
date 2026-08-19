@@ -14,6 +14,8 @@ OUT = ROOT / "public/data/copper_fundamentals.json"
 HISTORY = ROOT / "public/data/copper_history.json"
 UA = {"User-Agent":"Mozilla/5.0 Copper-Cycle-Engine/1.0", "Accept":"text/html,application/json"}
 ENGINE_MODEL_VERSION = "COPPER_ENGINE_V3_20260819"
+SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V2_20260819"
+INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V2_20260819"
 
 API_HEALTH = ROOT / "public/data/api_health.json"
 try:
@@ -347,34 +349,79 @@ def _extract_lme_monthly_links(html, base_url):
 
 def _lme_monthly_stock_history(max_reports=8):
     """
-    Public LME Stocks summary is monthly and is suitable for seeding a 13-week
-    history when daily stock-breakdown access is unavailable.
-    Returns [{date,lme,shfe=None,inventoryMode='official_monthly'}].
+    Seed official LME history from the public monthly Stocks summary XLSX files.
+    Important: use deterministic official file URLs first, because the LME HTML
+    report page can return WAF/HTTP errors to GitHub Actions even while the
+    public XLSX files remain directly addressable.
     """
-    url='https://www.lme.com/en/market-data/reports-and-data/warehouse-and-stocks-reports/stocks-summary'
+    month_names=['january','february','march','april','may','june',
+                 'july','august','september','october','november','december']
+    now=date.today()
     rows=[]
-    try:
-        resp=fetch(url,timeout=30)
-        links=_extract_lme_monthly_links(resp.text,url)
-        for y,mo,link in links[:max_reports]:
-            try:
-                rr=fetch(link,timeout=30)
-                found=None
-                for table in _read_tables_from_response(rr):
-                    found=_copper_total_from_dataframe(table)
-                    if found is not None: break
+    # Start from previous month: monthly stock summary is published in arrears.
+    y,m=now.year,now.month-1
+    if m==0:
+        y-=1;m=12
+    attempts=0
+    while attempts < max_reports + 4 and len(rows) < max_reports:
+        name=month_names[m-1]
+        url=(f'https://www.lme.com/-/media/files/data/reports-and-data/'
+             f'warehouse-and-stock-reports/stocks-summary/stocks-{name}-{y}.xlsx')
+        try:
+            rr=fetch(url,timeout=30)
+            found=None
+            for table in _read_tables_from_response(rr):
+                found=_copper_total_from_dataframe(table)
                 if found is not None:
-                    rows.append({
-                        'date':_month_end(y,mo).isoformat(),
-                        'lme':found,'shfe':None,
-                        'inventoryScore':None,'inventoryMode':'official_monthly',
-                        'source':'LME Stocks summary'
-                    })
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return rows
+                    break
+            if found is not None:
+                rows.append({
+                    'date':_month_end(y,m).isoformat(),
+                    'lme':found,'shfe':None,
+                    'inventoryScore':None,'inventoryMode':'official_monthly',
+                    'source':'LME Stocks summary',
+                    'sourceUrl':url
+                })
+        except Exception:
+            pass
+        m-=1
+        if m==0:
+            y-=1;m=12
+        attempts+=1
+
+    # HTML discovery is a secondary fallback only.
+    if len(rows) < min(4,max_reports):
+        url='https://www.lme.com/en/Market-data/Reports-and-data/Warehouse-and-stocks-reports/Stocks-summary'
+        try:
+            resp=fetch(url,timeout=30)
+            links=_extract_lme_monthly_links(resp.text,url)
+            known={x['date'] for x in rows}
+            for y,mo,link in links:
+                d=_month_end(y,mo).isoformat()
+                if d in known:
+                    continue
+                try:
+                    rr=fetch(link,timeout=30)
+                    found=None
+                    for table in _read_tables_from_response(rr):
+                        found=_copper_total_from_dataframe(table)
+                        if found is not None:
+                            break
+                    if found is not None:
+                        rows.append({
+                            'date':d,'lme':found,'shfe':None,
+                            'inventoryScore':None,'inventoryMode':'official_monthly',
+                            'source':'LME Stocks summary','sourceUrl':link
+                        })
+                        known.add(d)
+                        if len(rows)>=max_reports:
+                            break
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    return sorted(rows,key=lambda x:x['date'])
 
 def _merge_official_backfill(history_rows, backfill_rows):
     by_date={}
@@ -428,7 +475,7 @@ def inventory_sources():
             except Exception:pass
         if out['shfeInventoryTonnes'] is not None:break
       except Exception:pass
-    if out['shfeInventoryTonnes'] is None:out['statuses']['shfe']='official weekly inventory not machine-confirmed'
+    if out['shfeInventoryTonnes'] is None:out['statuses']['shfe']='official weekly inventory unavailable or blocked by SHFE anti-bot/WAF'
     today=date.today().isoformat()
     if out['lmeInventoryTonnes'] is not None:out['dataAt']['lme']=today
     if out['shfeInventoryTonnes'] is not None:out['dataAt']['shfe']=today
@@ -490,6 +537,7 @@ def disruptions():
       "supplyDisruptionScore":clamp(raw,0,100),
       "events":items[:12],
       "eventCount":len(items),
+      "filterVersion":SUPPLY_FILTER_VERSION,
       "source":"Google News RSS; copper-relevance filtered, deduplicated event score, not tonnage estimate"
     }
 
@@ -635,23 +683,23 @@ def main():
         cot=previous_section('cot') or cftc_cot()
         RUNTIME.mark('cot','CACHE','CFTC',data_at=(cot or {}).get('date'),ttl_s=10*24*3600)
 
-    if is_due('inventory',2):
+    prev_phys=previous_section('physical') or {}
+    prev_official=prev_phys.get('lmeInventoryTonnes') is not None or prev_phys.get('shfeInventoryTonnes') is not None
+    # Failed/null inventory is never allowed to hide behind the normal 2h cadence.
+    # Retry every workflow run until at least one official exchange value exists.
+    if is_due('inventory',2) or not prev_official:
         inv=inventory_sources()
+        inv['collectorVersion']=INVENTORY_COLLECTOR_VERSION
         official_ok=inv.get('lmeInventoryTonnes') is not None or inv.get('shfeInventoryTonnes') is not None
         if official_ok:
             src='LME' if inv.get('lmeInventoryTonnes') is not None and inv.get('shfeInventoryTonnes') is None else 'SHFE' if inv.get('shfeInventoryTonnes') is not None and inv.get('lmeInventoryTonnes') is None else 'LME/SHFE'
             RUNTIME.mark('inventory','LIVE',src,data_at=today,used=True,reliability=1.0)
         else:
-            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='diagnostic free supply proxy is available but excluded from official-inventory scoring')
+            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='official sources retried this run; diagnostic free supply proxy excluded from score')
     else:
-        prev_phys=previous_section('physical') or {}
-        inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses')}
+        inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses','collectorVersion')}
         inv['sources']=inv.get('sources') or {}; inv['statuses']=inv.get('statuses') or {}
-        cached_official=inv.get('lmeInventoryTonnes') is not None or inv.get('shfeInventoryTonnes') is not None
-        if cached_official:
-            RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,ttl_s=24*3600)
-        else:
-            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=False,reliability=0.0,alternative='cached attempt contained no official inventory')
+        RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,ttl_s=24*3600)
 
     shared_copper=(price.get('dailyCandles') or [])
     china=china_cycle_proxy(shared_copper)
@@ -661,12 +709,28 @@ def main():
     if conc.get('concentrateTightnessProxy') is None: conc=lkg_or_unavailable('concentrate','Yahoo Finance',max_age_h=8) or conc
     else: RUNTIME.mark('concentrate','LIVE','Yahoo Finance',data_at=now.isoformat())
 
-    if is_due('supply',1):
-        try: dis=disruptions()
-        except Exception: dis=lkg_or_unavailable('supply','Google News RSS',max_age_h=24) or {"supplyDisruptionScore":None,"events":[],"source":"Google News RSS"}
-        if dis.get('supplyDisruptionScore') is not None: RUNTIME.mark('supply','LIVE','Google News RSS',data_at=now.isoformat(),used=True,ttl_s=3600)
+    prev_supply=previous_section('supply') or {}
+    supply_cache_valid=prev_supply.get('filterVersion')==SUPPLY_FILTER_VERSION
+    # Old cached supply output used an over-broad query and may contain unrelated
+    # real-estate/force-majeure stories. Never reuse it after the filter upgrade.
+    if is_due('supply',1) or not supply_cache_valid:
+        try:
+            dis=disruptions()
+        except Exception:
+            # Only reuse an LKG if it was produced by the current copper relevance filter.
+            lg=lkg_or_unavailable('supply','Google News RSS',max_age_h=24)
+            dis=lg if isinstance(lg,dict) and lg.get('filterVersion')==SUPPLY_FILTER_VERSION else {
+                "supplyDisruptionScore":None,"events":[],"eventCount":0,
+                "filterVersion":SUPPLY_FILTER_VERSION,
+                "source":"Google News RSS; copper-relevance filter unavailable"
+            }
+        if dis.get('supplyDisruptionScore') is not None:
+            RUNTIME.mark('supply','LIVE','Google News RSS',data_at=now.isoformat(),used=True,ttl_s=3600)
+        else:
+            RUNTIME.mark('supply','UNAVAILABLE','Google News RSS',data_at=now.isoformat(),used=False,reliability=0.0)
     else:
-        dis=previous_section('supply') or disruptions(); RUNTIME.mark('supply','CACHE','Google News RSS',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),ttl_s=3600)
+        dis=prev_supply
+        RUNTIME.mark('supply','CACHE','Google News RSS',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,ttl_s=3600)
 
     proxy=free_inventory_proxy(curve,china,conc)
     total,chg13,pct,official_obs=history_inventory(today,inv,proxy)
@@ -692,7 +756,7 @@ def main():
                       "Free supply proxy is diagnostic-only when official inventory is unavailable",
                       "China cycle score uses FXI only; copper price momentum is diagnostic-only",
                       "13-week inventory change uses a calendar 91-day lag rather than observation count",
-                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary reports seed official inventory history when fewer than four official observations exist"]}
+                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes"]}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
     print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
