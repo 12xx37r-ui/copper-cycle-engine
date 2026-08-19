@@ -111,6 +111,7 @@ try:
     s=m.disruptions()
     assert s["eventCount"]==1, s
     assert s["supplyDisruptionScore"]>0, s
+    assert s["filterVersion"]==m.SUPPLY_FILTER_VERSION, s
     assert "Codelco" in s["events"][0]["title"], s
 finally:
     m.feedparser.parse=orig_parse
