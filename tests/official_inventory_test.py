@@ -67,3 +67,49 @@ assert un["officialIndicators"]["mineSupplyDisruption"]==0
 assert un["physical"].get("visibleInventoryTonnes") is None
 
 print("official inventory tests ok")
+
+# Mirror fallback parser: explicitly-labelled LME stock mirror may fill derived
+# metrics when official exchange downloads are blocked, but must not claim official.
+fixture_html = '''
+<table>
+<tr><th>date</th><th>LME Copper Cash-Settlement</th><th>LME Copper 3-month</th><th>LME Copper stock</th></tr>
+<tr><td>01. May 2026</td><td>12895.00</td><td>12967.00</td><td>398675</td></tr>
+<tr><td>31. July 2026</td><td>13834.00</td><td>13800.00</td><td>249850</td></tr>
+</table>
+'''
+mir = m._parse_westmetall_html(fixture_html, "https://fixture")
+assert len(mir)==2, mir
+assert mir[-1]["basket"]=="lme_mirror", mir[-1]
+assert mir[-1]["totalTonnes"]==249850.0, mir[-1]
+
+mirror_history=[]
+base=m.date(2025,8,1)
+for i in range(40):
+    d=base + m.timedelta(days=i*14)
+    v=400000-i*5000
+    mirror_history.append({"date":d.isoformat(),"basket":"lme_mirror","totalTonnes":v,
+        "components":{"lme":v},"cadence":"daily","source":"fixture mirror",
+        "sourceUrl":"https://fixture"})
+rm=m.compute_basket_metrics(mirror_history,"lme_mirror")
+assert rm["percentile"] is not None, rm
+assert rm["changePct13w"] is not None, rm
+pp={"physical":{},"supply":{"supplyDisruptionScore":0,"eventCount":0,"source":"fixture"},"apiHealth":{"sources":{}}}
+pp=m.apply_to_payload(pp,rm,[])
+assert pp["officialIndicators"]["inventoryEvidenceClass"]=="exchange_mirror", pp
+assert pp["officialIndicators"]["officialSourceAvailable"] is False, pp
+assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
+assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
+
+# V3 collector identity and column-agnostic parser guard.
+assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V3_20260819"
+fixture_generic = """
+<table><tbody>
+<tr><td>07. August 2026</td><td>14,240.00</td><td>14,092.00</td><td>222,975</td></tr>
+<tr><td>06. August 2026</td><td>14,455.00</td><td>14,260.00</td><td>226,650</td></tr>
+</tbody></table>
+"""
+g = m._parse_westmetall_html(fixture_generic, "https://fixture-generic")
+assert len(g) == 2, g
+assert g[-1]["date"] == "2026-08-07", g
+assert g[-1]["totalTonnes"] == 222975.0, g
+print("official inventory tests ok · V3 robust Westmetall parser")
