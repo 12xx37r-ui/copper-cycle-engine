@@ -1,15 +1,15 @@
 {
   "schemaVersion": "1.0",
   "modelVersion": "COPPER_ENGINE_V3_20260819",
-  "generatedAt": "2026-08-19T10:40:27.166663+00:00",
+  "generatedAt": "2026-08-19T10:48:20.816303+00:00",
   "engine": "copper-cycle-engine",
   "price": {
-    "priceUsdPerLb": 6.427000045776367,
+    "priceUsdPerLb": 6.425000190734863,
     "longPricePercentile": 98.92558694787107,
     "range1yPercentile": 89.28571428571429,
-    "ma20": 6.502100038528442,
-    "ma200": 5.891412482261658,
-    "momentum5dPct": -2.576930015890233,
+    "ma20": 6.502000045776367,
+    "ma200": 5.89140248298645,
+    "momentum5dPct": -2.607244628661176,
     "dailyCandles": [
       {
         "date": "2025-10-03",
@@ -1108,8 +1108,8 @@
       },
       {
         "date": "2026-08-19",
-        "close": 6.427000045776367,
-        "volume": 15569.0
+        "close": 6.425000190734863,
+        "volume": 15612.0
       }
     ],
     "weeklyCandles": [
@@ -2010,8 +2010,8 @@
       },
       {
         "date": "2026-08-17",
-        "close": 6.427000045776367,
-        "volume": 16359.0
+        "close": 6.425000190734863,
+        "volume": 16402.0
       }
     ],
     "source": "Yahoo Finance HG=F"
@@ -2022,20 +2022,22 @@
     "sources": {},
     "statuses": {
       "lme": "fetch failed: HTTPError",
-      "shfe": "official table format unavailable; proxy used"
+      "shfe": "official weekly inventory unavailable or blocked by SHFE anti-bot/WAF"
     },
+    "dataAt": {},
+    "collectorVersion": "COPPER_INVENTORY_V2_20260819",
     "visibleInventoryTonnes": null,
     "inventoryChangePct13w": null,
     "inventoryScore": null,
     "inventoryMode": "official_unavailable",
     "officialObservationCount": 0,
-    "freeSupplyProxyScore": 58.20331763567909,
-    "freeSupplyProxyTrendEquivalent": 4.921990581407455,
+    "freeSupplyProxyScore": 57.155760177990665,
+    "freeSupplyProxyTrendEquivalent": 4.293456106794399,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 50.17123679144777,
+    "chinaDemandProxyScore": 53.72509637810865,
     "curveSpreadPct": 0.19282389692285573,
     "curveScore": 54.82059742307139,
-    "concentrateTightnessProxy": 20.778050192111376
+    "concentrateTightnessProxy": 20.6850481005622
   },
   "curve": {
     "near": {
@@ -2064,136 +2066,187 @@
     "source": "CFTC Public Reporting Hub · Disaggregated Futures Only"
   },
   "china": {
-    "chinaDemandProxyScore": 50.17123679144777,
-    "fxi20dPct": 0.05707893048259027,
-    "copper20dPct": -0.3720379329083978,
-    "manufacturingConstructionScore": 50.17123679144777,
+    "chinaDemandProxyScore": 53.72509637810865,
+    "fxi20dPct": 1.2416987927028833,
+    "copper20dPct": -0.4030386300914568,
+    "manufacturingConstructionScore": 53.72509637810865,
     "source": "Yahoo FXI 20-day market proxy · copper price excluded from score"
   },
   "concentrate": {
-    "concentrateTightnessProxy": 20.778050192111376,
-    "minersVsMetal20dPp": 9.740649935962875,
+    "concentrateTightnessProxy": 20.6850481005622,
+    "minersVsMetal20dPp": 9.771650633145933,
     "source": "COPX vs HG=F relative-strength proxy"
   },
   "supply": {
-    "supplyDisruptionScore": 36,
+    "supplyDisruptionScore": 34,
     "events": [
       {
-        "title": "CREDAI welcomes Bengal realty reforms; seeks 8-month force majeure relief - economictimes.com",
-        "link": "https://news.google.com/rss/articles/CBMi-gFBVV95cUxNVjZESk5sYzBGcG5xejZDSDN0OFkydExwUEt6NWUxb3Nudy1ZR2dOOVVyd2FqZEEyQXByRHBtN1lGb1d6MFBCbWp4VDAxYlpEVjd1bFdnQ1hwVkt0cUFvbWNGVmEza2FQcVp0bF9wVmtCQnR0elRHcW54cHBzQS11dlVmLWlLMmVZcUVHSHRDMDRXYkNIa0ZXMy1xcXNNYzBEc1h6U3hEQ0xNdDN2WlNfZ0p1bjVfdUt3ZG85YjRsd0xUdERHaC1kakVwYUpXMnowM0ZHUGRLZFVHdVFsMlJ1T25GQkh5bE81cHhIQXFWQ2lEN2phRGNlSmN30gH_AUFVX3lxTFBKWHdxSktXRzV0R3lJWGh2T1BiUkhSOVl4T1o2Q3FVaVZ0RDVCb0NOcDFNbEF3enhXVFV6Z2t6dU10X2t4c2cwSDVlWjJXTS05YU9nTmZtUFNjS2VZRHNSU19LTENaVHUyMi15RW0tdGcxT190OXE0SHNDdEdfTTVBN1dXWVhqckVza19ENUhqbjdQSHNTN2F4d1RyZmFtUUgzbnZkMGhFV2xoQ3p3WHVSVjFJMl9JRURPdjlkcGFSUUpmNnp0dE5iT3RWNk9xZV9NU09Vd2lsSjBLOHJoR1FNWkJiZ3Bhb1VNQnhEdW84cFFHTkZwVV9uR1ZYOXVVRQ?oc=5",
-        "impact": 18
+        "title": "First Quantum adds 1,000 jobs as Cobre Panama restart nears - Mining.com",
+        "link": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPUHNldGliMnZtSlctaWxYOWc1ZUZHWDZscGdwY3pFdkczS1dGSVdXLUZRY24tVUE3UWJVRVBCYU9vNXVlMVFJd1JNNGdyODhrVHBJeDUweXpRam1EcF9GVTdmTW80RWhYWFNFbVpwZnZ1WlA4V0oxXzdscFRQYU9yckpYbnp3c3NndXc?oc=5",
+        "impact": -8
       },
       {
-        "title": "MahaRERA extends project completion deadlines by 4 months citing force majeure - economictimes.com",
-        "link": "https://news.google.com/rss/articles/CBMiggJBVV95cUxPMnRlM1FIOTlxZ1BKRXhOQWUybThfaTRRa3ZmVjh6MjNrR2pUeGVBV1JlSlZvNnRaM3ViM3FlTk1ENExlVUFZNUFKN3hjWWl1c3MxM3c0SjNOc1FWLXhxQmFiWDZPanduX2tBdDlvLTBfNldyMjhWMWlERmFMTlBNOFUyYXduQnZRMTE3Rmx3OVJMQkNXRklJQ0doZktJMTh3ZE5kdzc0SzFkeVJFRUNtMU0wVHVDN0VIYWZVVTVhaHRkSGcxbWJ6U3pzc0tsUk9EN1FGRWhkQXJpa2xFUUU3bEowdm5OZWJjS3hENVJ0OU1XTkdqMlozOXZRdHZvdjZEQnfSAYcCQVVfeXFMTXQ2c2RodVhvcmloN0Z3dGhaZ1J1Y294cnBRZ2tJODZfQ1p2anowR1k3elJJelotelM5bGlrUFlNNjh2bXpaRGZkc3p6SkF6QzVWWEJFY2pOWlJBMG1IVE1CSk5lcTBDZW5DT2JRR0RPV0ZCd21yVFNBaFZjeVJ2V3laelc4ZHg3d3BIU2NiYXh6LV93VmF1M2pBODBVTHRsb2RPRGQ0M2FlUWQ0MHhHeWxWTFYzT0FLZ01DcDBPcWNkNHN0eDlDcHFPSW5VZVVFeTMySnFKNk96TldZVlB3dHBlUGlYRUN1ZzhXcUxLU0Uxc3lENU96ekYyaVVoTGhoWnJiVTROdWM?oc=5",
-        "impact": 18
+        "title": "Sandvik to supply drills, loaders, rock tools and service contract for Viscaria copper mine restart - International Mining",
+        "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxOc1QyUGlsR0dsYWx0TlZVb0cycUdPc0JXMVBkSEJheHBvMWdBMkhsWTZuOTVOWVpTbnZGelcwNHotdXNua2t4NkRuMF9yR3NoYkg1WUJkWmNZQ3BianJMVHMtaG0wUTR5NVNQbk5wMmRlR3hSdjlyVXhXTWVOVW1LRHdZcEo5eF9jSFhic2NjWkFibmVtbGhlVTIyWmZGZHQwajdhTW96X2hidjVXcDlCLWpDVWh5N2RvWi1iX0lZa3MwUUdrUEhaa19Hcw?oc=5",
+        "impact": -8
+      },
+      {
+        "title": "Worker dies in copper mine accident, company says - KBTX News 3",
+        "link": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOVDliRDJleno0b1pWV2NNaVhqZHQ3MTY5ZWNUWUFudlI1ZXM1RW5nYXE3NWZ0a1pKSlZHb1BMcHVNbXRXamt2bHZZYWVmNXlsMTVKM1g4Q2VvSkY4S3JLSVRiZ0d5eElPejAzRjBSR05uUmoyN3BRWGQwU0RxRkMyVEQ0Szc?oc=5",
+        "impact": 12
+      },
+      {
+        "title": "News Flash • Vehicular Accident - Freeport *Update* - pdcn.org",
+        "link": "https://news.google.com/rss/articles/CBMiW0FVX3lxTFBvWFNiZW00WEVMcVNVRmRDc09reUdTYUFDTW5FaGYweF9SX1lTSmZJZU81NnJudTQxb2s2c1ZlTnZNUkRxdXNvaFdvem5HN0FlRmtncGZRR3doRjQ?oc=5",
+        "impact": 12
+      },
+      {
+        "title": "Lloyds Metals Allowed to Ready Restart of Giant Papua New Guinea Copper Mine - Bloomberg.com",
+        "link": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPYXpjSFlhalM2S1JoRE5xSm9zc3IyQm84VmZpUUlOS1V5MUFpQ1NLYVBIRVd6elNkMkJsYW5USkREcV9wNkhuZENaMUtad3l0WmdJanh3QWUtX2JxNEZfaXRfeXpOZWpsOUx6NEQ3SnBPZlVBd2d2YXFDUUhjd0MxQzFzNjdmdnV4U0Z6YmdOX05zeWNTNjY5ZDcweFlHQUdrR1ZzWmY1ZWk2QVE4TFRHZUtyRnk?oc=5",
+        "impact": -8
+      },
+      {
+        "title": "Sandvik to provide automated fleet for Viscaria copper mine restart - Mining Technology",
+        "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE1wWEg0cTVmV3RTNFlHNEljT3ZEUVZrdmVPNnZINGhqX3ZTa3RMNzFmZG41Z3RjWS1sX2xNM0MwNC1Pd05FZzlmeUZHaXFxN3VUQlR1dVU0NHZJR3dib1lFZmFWaWZQdE1DbllVZU00cWZkVVJiOGxQaEZFbzJDdDQ?oc=5",
+        "impact": -8
+      },
+      {
+        "title": "Golden Pass Ramp Finds Footing as Freeport Outage Cuts Natural Gas Demand - Natural Gas Intelligence",
+        "link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPb2RKZnFvYWFHZ0NjdGsyU3dBWnlBZUZ1RWRTMXV6Zlk2ckxGV3RHNTlvYmkxNWtndDVXdGhSYUdKS3JIS1U1aElSWllpeDhScU9NMWdhM1UtT1JaSjlhTXdhNGg0SmlkMnRfN05XS1hrOUJ1S1NCWm5NQkdNZ1g5dFZ1Znl6aHY5TVlCSklyRDJqVmFFR1VDaGlyRUNOSXB3dkt5aGhUZjllcm8?oc=5",
+        "impact": 12
+      },
+      {
+        "title": "Freeport LNG Restarts Texas Export Plant After Power-Related Shutdown - Pipeline and Gas Journal",
+        "link": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxNM3lIVkRXMWhVVFpTWk5UYmFxTlQ4WjliLUtHVjUyMzVlV3owYjZNY05UMk1DOUhpQ1k1QkRZd1BmQzlZSTBtMENwX1FGV1JFdlRZWDJDdWIzR3owMUpZM0ttbFFlZmMzSnNOb3RFVU9YQnZMeUlrXzdJb0JMTWVHaVFRTHo4U0EyR2o4WFFrcUswWVNRZDVHbVprLUw2NnZGQU44RUJhR1h4UQ?oc=5",
+        "impact": 7
+      },
+      {
+        "title": "Cobre Panama restart hopes rise as thousands return to mine - Mining.com",
+        "link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQZTdhV0hFMzdBTThxY1UzUTBQUVNaWURIMHh5bm4zdC1NRFEzS3RYcmR5WnJVbFZfN3JfZnRuMjJjd1I2WFlHQV9WSDZKazFudzA2UF8talR2bDFJX09nVUJZUkVEVGlzRzhxczFyVWwwbFFwdmMtX3MwaExtLUltU29nRXR4VEJETVVj?oc=5",
+        "impact": -8
+      },
+      {
+        "title": "Workers strike at Glencore's Australia refinery over pay dispute - Reuters",
+        "link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPZWlTU01Nai01ZERyZnZxR1VWeWJSYmJ5ZGp1cUk1WFRzdFJJdW5ISnUtVXF5aHJKV2RDVEZYU2UwLWlXTUEzcW9LWVZFdHZLNmx0NTV6UlJsdzdHZ3FLVnFBd0x1akQ2Y19IY1ppT1djUnBIWFNtMGMwSzdmc1prQ00tQWozUnNnTWk1UzFpb2FOb3U1aEozMEs4X2xUNWt0SU50bXJhcVUyak94VEZ4VXdPRzRlZzBtM1hZ?oc=5",
+        "impact": 12
+      },
+      {
+        "title": "Glencore’s US$250 million Cat order from Finning for Alumbrera restart - International Mining",
+        "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxNa1h1TnlPYzducThoUF80RkV2RlR6cHg0dFRudkQ2bXUtd0tER1BmeUJRemNoQU1CWFoyY0ItRG5tY1NjNHdmUHVUQXdkbmpXaHhqTHpMTEFTYXNxc1dxbTFFa2txeDlCOWxrRVQzM1lGSXJ1N21aY29rWnhXeVo3NS1ZaThNdXpNVHJzelBFNzFQLWMyV0pGVktkaW1VNl9YN2tNOA?oc=5",
+        "impact": -8
+      },
+      {
+        "title": "Freeport Indonesia Pushes Back Grasberg Copper Restart by A Year - Bloomberg.com",
+        "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNdVM0MXRjXzVhNWNFS0RnZDRDZ09DQTl4M2FEVk1sNGhMZHlsMjRTdGtndzBKemh2eDAzMTBDWGpmbFlQRnViemNtMW9QeF9hNXJ1VUVNNWxGTk5zczVacFJIZXp3NlNOWEtJTW1RaVFHTWpzbUpaVVlFdFJGSmJ0ZGlSYnVaTGZXNmlNSFVMU0FCREJHb1BoanV1WDlDM3RBdlJkU1lWMk1XSnYxQWw1cmxRTmQ3dw?oc=5",
+        "impact": -8
       }
     ],
-    "eventCount": 2,
-    "source": "Google News RSS; deduplicated event score, not tonnage estimate"
+    "eventCount": 45,
+    "filterVersion": "COPPER_SUPPLY_FILTER_V2_20260819",
+    "source": "Google News RSS; copper-relevance filtered, deduplicated event score, not tonnage estimate"
   },
   "apiHealth": {
     "schemaVersion": "1.0",
-    "generatedAt": "2026-08-19T10:40:33.979519+00:00",
+    "generatedAt": "2026-08-19T10:48:38.288379+00:00",
     "sources": {
       "price": {
         "status": "LIVE",
         "source": "Yahoo Finance",
         "dataAt": "2026-08-19",
-        "ageSeconds": 38428.1,
+        "ageSeconds": 38901.4,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-19T10:40:28.071521+00:00"
+        "checkedAt": "2026-08-19T10:48:21.392934+00:00"
       },
       "curve": {
         "status": "LIVE",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-19T10:40:27.166663+00:00",
-        "ageSeconds": 4.1,
+        "dataAt": "2026-08-19T10:48:20.816303+00:00",
+        "ageSeconds": 1.5,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-19T10:40:31.259395+00:00"
+        "checkedAt": "2026-08-19T10:48:22.362791+00:00"
       },
       "cot": {
         "status": "CACHE",
         "source": "CFTC",
         "dataAt": "2026-08-11T00:00:00.000",
-        "ageSeconds": 729631.3,
+        "ageSeconds": 730102.4,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
-        "checkedAt": "2026-08-19T10:40:31.259448+00:00"
+        "checkedAt": "2026-08-19T10:48:22.362840+00:00"
       },
       "inventory": {
         "status": "UNAVAILABLE",
         "source": "LME/SHFE",
-        "dataAt": "2026-08-19T10:29:14.798924+00:00",
-        "ageSeconds": 676.5,
+        "dataAt": "2026-08-19",
+        "ageSeconds": 38906.1,
         "usedInCalculation": false,
         "reliability": 0.0,
-        "fallback": "cached attempt contained no official inventory",
+        "fallback": "official sources retried this run; diagnostic free supply proxy excluded from score",
         "url": null,
-        "checkedAt": "2026-08-19T10:40:31.259481+00:00"
+        "checkedAt": "2026-08-19T10:48:26.139265+00:00"
       },
       "china": {
         "status": "LIVE",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-19T10:40:27.166663+00:00",
-        "ageSeconds": 4.3,
+        "dataAt": "2026-08-19T10:48:20.816303+00:00",
+        "ageSeconds": 5.7,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-19T10:40:31.497918+00:00"
+        "checkedAt": "2026-08-19T10:48:26.548717+00:00"
       },
       "concentrate": {
         "status": "LIVE",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-19T10:40:27.166663+00:00",
-        "ageSeconds": 4.5,
+        "dataAt": "2026-08-19T10:48:20.816303+00:00",
+        "ageSeconds": 6.0,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-19T10:40:31.700804+00:00"
+        "checkedAt": "2026-08-19T10:48:26.862885+00:00"
       },
       "supply": {
-        "status": "CACHE",
+        "status": "LIVE",
         "source": "Google News RSS",
-        "dataAt": "2026-08-19T10:29:14.798924+00:00",
-        "ageSeconds": 676.9,
+        "dataAt": "2026-08-19T10:48:20.816303+00:00",
+        "ageSeconds": 6.6,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://news.google.com/",
-        "checkedAt": "2026-08-19T10:40:31.700854+00:00"
+        "checkedAt": "2026-08-19T10:48:27.387579+00:00"
       },
       "physical": {
         "status": "UNAVAILABLE",
         "source": "LME/SHFE",
         "dataAt": "2026-08-19",
-        "ageSeconds": 38434.0,
+        "ageSeconds": 38918.3,
         "usedInCalculation": false,
         "reliability": 0.0,
         "fallback": "diagnostic free supply proxy exists but is not official inventory",
         "url": null,
-        "checkedAt": "2026-08-19T10:40:33.979499+00:00"
+        "checkedAt": "2026-08-19T10:48:38.288362+00:00"
       },
       "free_supply_proxy": {
         "status": "FALLBACK",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-19T10:40:27.166663+00:00",
-        "ageSeconds": 6.8,
+        "dataAt": "2026-08-19T10:48:20.816303+00:00",
+        "ageSeconds": 17.5,
         "usedInCalculation": false,
         "reliability": 0.7,
         "fallback": "COMEX curve + FXI China proxy + concentrate proxy",
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-19T10:40:33.979514+00:00"
+        "checkedAt": "2026-08-19T10:48:38.288375+00:00"
       }
     },
     "providers": {
@@ -2207,13 +2260,31 @@
         "errors": 0
       },
       "LME": {
-        "network_calls": 3,
+        "network_calls": 20,
         "deduplicated": 0,
         "cache_uses": 0,
-        "retries": 2,
+        "retries": 6,
         "http_429": 0,
         "timeouts": 0,
-        "errors": 1
+        "errors": 3
+      },
+      "SHFE": {
+        "network_calls": 2,
+        "deduplicated": 0,
+        "cache_uses": 0,
+        "retries": 0,
+        "http_429": 0,
+        "timeouts": 0,
+        "errors": 0
+      },
+      "Google News RSS": {
+        "network_calls": 1,
+        "deduplicated": 0,
+        "cache_uses": 0,
+        "retries": 0,
+        "http_429": 0,
+        "timeouts": 0,
+        "errors": 0
       }
     }
   },
@@ -2224,6 +2295,8 @@
     "China cycle score uses FXI only; copper price momentum is diagnostic-only",
     "13-week inventory change uses a calendar 91-day lag rather than observation count",
     "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate",
-    "Public LME monthly stock-summary reports seed official inventory history when fewer than four official observations exist"
+    "Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist",
+    "Null official-inventory cache is retried every workflow run until an exchange value is recovered",
+    "Supply cache is invalidated when the copper-relevance filter version changes"
   ]
 }
