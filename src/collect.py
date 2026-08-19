@@ -12,10 +12,14 @@ import feedparser
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public/data/copper_fundamentals.json"
 HISTORY = ROOT / "public/data/copper_history.json"
-UA = {"User-Agent":"Mozilla/5.0 Copper-Cycle-Engine/1.0", "Accept":"text/html,application/json"}
+UA = {
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language":"en-US,en;q=0.9"
+}
 ENGINE_MODEL_VERSION = "COPPER_ENGINE_V3_20260819"
-SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V2_20260819"
-INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V2_20260819"
+SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V3_20260819"
+INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V3_20260819"
 
 API_HEALTH = ROOT / "public/data/api_health.json"
 try:
@@ -170,8 +174,22 @@ def pct_rank(values,current):
     if not vals or current is None:return None
     return 100*sum(x<=current for x in vals)/len(vals)
 
+def _request_headers(url):
+    h=dict(UA)
+    low=str(url).lower()
+    if re.search(r'\.(xlsx?|xls)(?:\?|$)',low):
+        h["Accept"]="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream,*/*;q=0.8"
+    if 'lme.com' in low:
+        h["Referer"]="https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports/Stocks-summary"
+        h["Sec-Fetch-Site"]="same-origin"
+        h["Sec-Fetch-Mode"]="navigate"
+    elif 'shfe.com.cn' in low:
+        h["Referer"]="https://www.shfe.com.cn/eng/reports/index.html"
+        h["Accept-Language"]="en-US,en;q=0.9,zh-CN;q=0.7"
+    return h
+
 def fetch(url, timeout=20):
-    return RUNTIME.request(url, headers=UA, timeout=timeout)
+    return RUNTIME.request(url, headers=_request_headers(url), timeout=timeout)
 
 def yahoo_history(symbol, period="10y", interval="1d"):
     key=(symbol,period,interval)
@@ -440,45 +458,83 @@ def _merge_official_backfill(history_rows, backfill_rows):
     return [by_date[k] for k in sorted(by_date)]
 
 def inventory_sources():
-    out={"lmeInventoryTonnes":None,"shfeInventoryTonnes":None,"sources":{},"statuses":{},"dataAt":{}}
+    out={
+      "lmeInventoryTonnes":None,"shfeInventoryTonnes":None,
+      "sources":{},"statuses":{},"dataAt":{},"cadence":{}
+    }
+
+    # 1) LME current/daily public warehouse page route.
     lme_url='https://www.lme.com/en/market-data/reports-and-data/warehouse-and-stocks-reports'
     try:
-      resp=fetch(lme_url);text=resp.text
-      v=parse_first_number(text,[r'Copper.{0,1200}?Closing Stock[^0-9]{0,50}([0-9][0-9,]+)',r'Copper.{0,1200}?Total Stock[^0-9]{0,50}([0-9][0-9,]+)',r'Copper.{0,1200}?Opening Stock[^0-9]{0,50}([0-9][0-9,]+)'])
+      resp=fetch(lme_url); text=resp.text
+      v=parse_first_number(text,[
+        r'Copper.{0,1200}?Closing Stock[^0-9]{0,50}([0-9][0-9,]+)',
+        r'Copper.{0,1200}?Total Stock[^0-9]{0,50}([0-9][0-9,]+)',
+        r'Copper.{0,1200}?Opening Stock[^0-9]{0,50}([0-9][0-9,]+)'
+      ])
       if v and 1000<=v<=5_000_000:
-        out['lmeInventoryTonnes']=v;out['sources']['lme']='LME warehouse and stocks public page'
+        out['lmeInventoryTonnes']=v
+        out['sources']['lme']='LME warehouse and stocks public page'
+        out['dataAt']['lme']=date.today().isoformat()
+        out['cadence']['lme']='daily'
       else:
         for link in _candidate_report_links(text,lme_url,['stock','warehouse','opening','closing','lme']):
           try:
             rr=fetch(link,timeout=30)
             for table in _read_tables_from_response(rr):
               found=_copper_total_from_dataframe(table)
-              if found is not None:out['lmeInventoryTonnes']=found;out['sources']['lme']='LME official downloadable warehouse/stocks report';break
-            if out['lmeInventoryTonnes'] is not None:break
-          except Exception:pass
-      if out['lmeInventoryTonnes'] is None:out['statuses']['lme']='official source reachable; machine-readable copper total not confirmed'
-    except Exception as e:out['statuses']['lme']=f'fetch failed: {type(e).__name__}'
-    for url in ['https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/','https://www.shfe.com.cn/reports/StatisticalData/WeeklyData/']:
+              if found is not None:
+                out['lmeInventoryTonnes']=found
+                out['sources']['lme']='LME official downloadable warehouse/stocks report'
+                out['dataAt']['lme']=date.today().isoformat()
+                out['cadence']['lme']='daily'
+                break
+            if out['lmeInventoryTonnes'] is not None: break
+          except Exception:
+            pass
+    except Exception as e:
+      out['statuses']['lme_daily']=f'daily route failed: {type(e).__name__}'
+
+    # 2) Official public LME monthly Stocks Summary fallback.
+    # This is still official inventory; it is just lower cadence than the daily report.
+    if out['lmeInventoryTonnes'] is None:
+      monthly=_lme_monthly_stock_history(max_reports=8)
+      if monthly:
+        latest=monthly[-1]
+        out['lmeInventoryTonnes']=num(latest.get('lme'))
+        out['sources']['lme']='LME Stocks summary (official monthly closing stock)'
+        out['dataAt']['lme']=latest.get('date')
+        out['cadence']['lme']='monthly'
+        out['lmeMonthlyHistory']=monthly
+      else:
+        out['statuses']['lme']='official daily and monthly LME stock routes unavailable'
+
+    # 3) SHFE official weekly inventory.
+    for url in [
+      'https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/',
+      'https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory'
+    ]:
       try:
         rr=fetch(url,timeout=30)
+        # Reject obvious WAF/challenge pages before table parsing.
+        body=(rr.text or '')[:8000].lower()
+        if 'web 应用防火墙' in body or '人机识别' in body or 'slide' in body and 'captcha' in body:
+          continue
         for table in _read_tables_from_response(rr):
           found=_copper_total_from_dataframe(table)
-          if found is not None:out['shfeInventoryTonnes']=found;out['sources']['shfe']='SHFE official weekly inventory table';break
-        if out['shfeInventoryTonnes'] is None:
-          for link in _candidate_report_links(rr.text,url,['week','inventory','stock','仓单','库存','weekly']):
-            try:
-              dl=fetch(link,timeout=30)
-              for table in _read_tables_from_response(dl):
-                found=_copper_total_from_dataframe(table)
-                if found is not None:out['shfeInventoryTonnes']=found;out['sources']['shfe']='SHFE official weekly inventory download';break
-              if out['shfeInventoryTonnes'] is not None:break
-            except Exception:pass
-        if out['shfeInventoryTonnes'] is not None:break
-      except Exception:pass
-    if out['shfeInventoryTonnes'] is None:out['statuses']['shfe']='official weekly inventory unavailable or blocked by SHFE anti-bot/WAF'
-    today=date.today().isoformat()
-    if out['lmeInventoryTonnes'] is not None:out['dataAt']['lme']=today
-    if out['shfeInventoryTonnes'] is not None:out['dataAt']['shfe']=today
+          if found is not None:
+            out['shfeInventoryTonnes']=found
+            out['sources']['shfe']='SHFE official weekly inventory'
+            out['dataAt']['shfe']=date.today().isoformat()
+            out['cadence']['shfe']='weekly'
+            break
+        if out['shfeInventoryTonnes'] is not None: break
+      except Exception:
+        pass
+
+    if out['shfeInventoryTonnes'] is None:
+      out['statuses']['shfe']='official weekly inventory unavailable or blocked by SHFE anti-bot/WAF'
+
     return out
 
 def china_cycle_proxy(copper_rows=None):
@@ -500,45 +556,107 @@ def concentrate_proxy(copper_rows=None):
     return {"concentrateTightnessProxy":tight,"minersVsMetal20dPp":m,"source":"COPX vs HG=F relative-strength proxy"}
 
 def disruptions():
-    # Query + post-filter both require copper/mining context to prevent unrelated
-    # force-majeure/strike headlines (real estate, airlines, etc.) from scoring.
+    """
+    Copper-specific supply-event score.
+    Company-name-only matches are not sufficient (e.g. Freeport LNG is NOT
+    Freeport-McMoRan copper supply). Multiple articles about the same asset/event
+    are collapsed to one contribution.
+    """
     feeds=[
-      'https://news.google.com/rss/search?q=%28%22copper+mine%22+OR+codelco+OR+freeport+OR+escondida+OR+grasberg+OR+%22cobre+panama%22+OR+antofagasta+OR+glencore+OR+ivanhoe%29+%28strike+OR+outage+OR+suspension+OR+%22force+majeure%22+OR+accident+OR+restart%29+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen'
+      'https://news.google.com/rss/search?q=%28%22copper+mine%22+OR+%22copper+smelter%22+OR+%22copper+refinery%22+OR+codelco+OR+escondida+OR+grasberg+OR+%22cobre+panama%22+OR+kamoa+OR+kakula+OR+collahuasi+OR+%22las+bambas%22+OR+%22cerro+verde%22+OR+quellaveco+OR+chuquicamata+OR+%22el+teniente%22+OR+viscaria%29+%28strike+OR+outage+OR+suspension+OR+%22force+majeure%22+OR+accident+OR+restart+OR+shutdown+OR+closure%29+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen'
     ]
-    event_keywords={
-      'force majeure':18,'strike':12,'outage':12,'suspension':15,'accident':12,
-      'guidance cut':12,'production cut':12,'closure':15,'shutdown':15,
-      'restart':-8,'recovery':-6,'resume':-6
+    event_keywords=[
+      ('force majeure',18),('shutdown',15),('suspension',15),('closure',15),
+      ('production cut',12),('guidance cut',12),('strike',12),('outage',12),
+      ('accident',10),('fatal',10),('dies',8),
+      ('restart delayed',10),('restart push',10),('pushes back',10),('delay',8),
+      ('restart',-8),('recovery',-6),('resume',-6),('reopen',-6)
+    ]
+    # Named assets are safe copper-context anchors. Generic company names such as
+    # "Freeport" and "Glencore" are intentionally absent.
+    assets={
+      'cobre_panama':['cobre panama'],
+      'grasberg':['grasberg','freeport indonesia'],
+      'escondida':['escondida'],
+      'el_teniente':['el teniente'],
+      'chuquicamata':['chuquicamata'],
+      'kamoa_kakula':['kamoa','kakula'],
+      'collahuasi':['collahuasi'],
+      'las_bambas':['las bambas'],
+      'cerro_verde':['cerro verde'],
+      'quellaveco':['quellaveco'],
+      'viscaria':['viscaria'],
+      'codelco_other':['codelco']
     }
-    copper_context=[
-      'copper','codelco','freeport','freeport-mcmoran','escondida','grasberg',
-      'cobre panama','antofagasta','glencore','ivanhoe','kamoa','kakula',
-      'collahuasi','tenke','cerro verde','las bambas','quellaveco','chuquicamata',
-      'el teniente','copper mine','copper mining','copper smelter','copper concentrate'
-    ]
-    items=[];raw=0;seen=set()
+
+    candidates=[]
     for url in feeds:
       d=feedparser.parse(fetch(url,timeout=20).content)
-      for e in d.entries[:60]:
+      for e in d.entries[:80]:
         title=(e.get('title') or '').strip()
         norm=re.sub(r'\s+',' ',title.lower())
         norm=re.sub(r'\s+-\s+[^-]{2,80}$','',norm)
-        if not norm or norm in seen: continue
-        seen.add(norm)
-        if not any(k in norm for k in copper_context):
-            continue
-        hit=sum(w for k,w in event_keywords.items() if k in norm)
-        if not hit:
-            continue
-        hit=max(-12,min(24,hit))
-        raw+=hit
-        items.append({"title":title,"link":e.get('link'),"impact":hit})
+        if not norm:
+          continue
+
+        asset=None
+        for key,aliases in assets.items():
+          if any(a in norm for a in aliases):
+            asset=key; break
+
+        generic_copper=(
+          'copper mine' in norm or 'copper mining' in norm or
+          'copper smelter' in norm or 'copper refinery' in norm or
+          ('copper' in norm and any(x in norm for x in ['mine','mining','smelter','refinery','concentrate']))
+        )
+        if asset is None and not generic_copper:
+          continue
+
+        # Explicitly reject known ambiguous non-copper contexts.
+        if any(x in norm for x in ['freeport lng','natural gas','realty','real estate','maharera','credai']):
+          continue
+
+        impacts=[w for k,w in event_keywords if k in norm]
+        if not impacts:
+          continue
+        # Avoid counting "restart" as relief when the same title says the restart
+        # was delayed/pushed back.
+        if any(x in norm for x in ['restart delayed','restart push','pushes back','restart by a year','restart postponed']):
+          hit=max([x for x in impacts if x>0] or [8])
+        else:
+          hit=max(impacts,key=lambda x:abs(x))
+        hit=max(-12,min(20,hit))
+
+        # Generic unnamed copper events cluster by a compact title fingerprint.
+        if asset is None:
+          fp=re.sub(r'[^a-z0-9 ]',' ',norm)
+          fp=' '.join(w for w in fp.split() if w not in {'copper','mine','mining','the','a','an','in','at','on','of','to','and','says','company'})
+          asset='generic:'+(' '.join(fp.split()[:6]) or norm[:60])
+
+        candidates.append({
+          "asset":asset,"title":title,"link":e.get('link'),"impact":hit,
+          "published":e.get('published') or e.get('updated')
+        })
+
+    # One contribution per asset/event cluster. Prefer the strongest absolute
+    # supply impact; on ties retain the first/newest feed item.
+    by_asset={}
+    for x in candidates:
+      old=by_asset.get(x['asset'])
+      if old is None or abs(x['impact'])>abs(old['impact']):
+        by_asset[x['asset']]=x
+
+    items=list(by_asset.values())
+    raw=sum(x['impact'] for x in items)
+    score=clamp(raw,0,100)
+    public_items=[{k:v for k,v in x.items() if k!='asset'} for x in items[:12]]
     return {
-      "supplyDisruptionScore":clamp(raw,0,100),
-      "events":items[:12],
+      "supplyDisruptionScore":score,
+      "events":public_items,
       "eventCount":len(items),
+      "rawNetImpact":raw,
       "filterVersion":SUPPLY_FILTER_VERSION,
-      "source":"Google News RSS; copper-relevance filtered, deduplicated event score, not tonnage estimate"
+      "source":"Google News RSS; copper-asset filtered and asset-clustered event score, not tonnage estimate"
     }
 
 def clean_history_rows(data, today, new_row, retention_weeks=26):
@@ -600,7 +718,10 @@ def history_inventory(today, inv, proxy):
       (num(x.get('lme')) is not None or num(x.get('shfe')) is not None)
     ]
     if len(official_existing) < 4:
-        data=_merge_official_backfill(data,_lme_monthly_stock_history(max_reports=8))
+        seeded=(inv.get('lmeMonthlyHistory') or []) if isinstance(inv,dict) else []
+        if not seeded:
+            seeded=_lme_monthly_stock_history(max_reports=8)
+        data=_merge_official_backfill(data,seeded)
 
     lme=num(inv.get('lmeInventoryTonnes'))
     shfe=num(inv.get('shfeInventoryTonnes'))
@@ -693,7 +814,11 @@ def main():
         official_ok=inv.get('lmeInventoryTonnes') is not None or inv.get('shfeInventoryTonnes') is not None
         if official_ok:
             src='LME' if inv.get('lmeInventoryTonnes') is not None and inv.get('shfeInventoryTonnes') is None else 'SHFE' if inv.get('shfeInventoryTonnes') is not None and inv.get('lmeInventoryTonnes') is None else 'LME/SHFE'
-            RUNTIME.mark('inventory','LIVE',src,data_at=today,used=True,reliability=1.0)
+            dates=[v for v in (inv.get('dataAt') or {}).values() if v]
+            actual_at=max(dates) if dates else today
+            state='LIVE' if actual_at==today else 'CACHE'
+            rel=1.0 if state=='LIVE' else 0.9
+            RUNTIME.mark('inventory',state,src,data_at=actual_at,used=True,reliability=rel,ttl_s=45*86400)
         else:
             RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='official sources retried this run; diagnostic free supply proxy excluded from score')
     else:
@@ -706,8 +831,10 @@ def main():
     if china.get('manufacturingConstructionScore') is None: china=lkg_or_unavailable('china','Yahoo Finance',max_age_h=8) or china
     else: RUNTIME.mark('china','LIVE','Yahoo Finance',data_at=now.isoformat())
     conc=concentrate_proxy(shared_copper)
-    if conc.get('concentrateTightnessProxy') is None: conc=lkg_or_unavailable('concentrate','Yahoo Finance',max_age_h=8) or conc
-    else: RUNTIME.mark('concentrate','LIVE','Yahoo Finance',data_at=now.isoformat())
+    if conc.get('concentrateTightnessProxy') is None:
+        conc=lkg_or_unavailable('concentrate','Yahoo Finance',max_age_h=8,used=False) or conc
+    else:
+        RUNTIME.mark('concentrate','LIVE','Yahoo Finance',data_at=now.isoformat(),used=False,reliability=0.7,alternative='diagnostic-only; excluded from V3 score')
 
     prev_supply=previous_section('supply') or {}
     supply_cache_valid=prev_supply.get('filterVersion')==SUPPLY_FILTER_VERSION
@@ -725,12 +852,12 @@ def main():
                 "source":"Google News RSS; copper-relevance filter unavailable"
             }
         if dis.get('supplyDisruptionScore') is not None:
-            RUNTIME.mark('supply','LIVE','Google News RSS',data_at=now.isoformat(),used=True,ttl_s=3600)
+            RUNTIME.mark('supply','LIVE','Google News RSS',data_at=now.isoformat(),used=True,reliability=0.75,alternative='event proxy; not verified disrupted tonnage',ttl_s=3600)
         else:
             RUNTIME.mark('supply','UNAVAILABLE','Google News RSS',data_at=now.isoformat(),used=False,reliability=0.0)
     else:
         dis=prev_supply
-        RUNTIME.mark('supply','CACHE','Google News RSS',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,ttl_s=3600)
+        RUNTIME.mark('supply','CACHE','Google News RSS',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,reliability=0.70,alternative='cached event proxy; not verified disrupted tonnage',ttl_s=3600)
 
     proxy=free_inventory_proxy(curve,china,conc)
     total,chg13,pct,official_obs=history_inventory(today,inv,proxy)
@@ -738,13 +865,18 @@ def main():
     physical={
       **inv,"visibleInventoryTonnes":total,"inventoryChangePct13w":chg13,"inventoryScore":pct,
       "inventoryMode":inventory_mode,"officialObservationCount":official_obs,
+      "inventoryDataAt":max([v for v in (inv.get('dataAt') or {}).values() if v],default=None),
+      "inventoryCadence":inv.get('cadence') or {},
       "freeSupplyProxyScore":proxy.get('inventoryScore'),"freeSupplyProxyTrendEquivalent":proxy.get('inventoryChangePct13w'),
       "inventoryProxySource":proxy.get('source'),"chinaDemandProxyScore":china.get('chinaDemandProxyScore'),
       "curveSpreadPct":curve.get('curveSpreadPct'),"curveScore":curve.get('curveScore'),
       "concentrateTightnessProxy":conc.get('concentrateTightnessProxy')
     }
     if inventory_mode=='official':
-        RUNTIME.mark('physical','LIVE','LME/SHFE',data_at=today,reliability=1.0)
+        inv_dates=[v for v in (inv.get('dataAt') or {}).values() if v]
+        actual_at=max(inv_dates) if inv_dates else today
+        state='LIVE' if actual_at==today else 'CACHE'
+        RUNTIME.mark('physical',state,'LME/SHFE',data_at=actual_at,used=True,reliability=1.0 if state=='LIVE' else 0.9,ttl_s=45*86400)
     else:
         RUNTIME.mark('physical','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='diagnostic free supply proxy exists but is not official inventory')
         RUNTIME.mark('free_supply_proxy','FALLBACK','Yahoo Finance',data_at=now.isoformat(),used=False,reliability=0.70,alternative='COMEX curve + FXI China proxy + concentrate proxy')
@@ -756,7 +888,7 @@ def main():
                       "Free supply proxy is diagnostic-only when official inventory is unavailable",
                       "China cycle score uses FXI only; copper price momentum is diagnostic-only",
                       "13-week inventory change uses a calendar 91-day lag rather than observation count",
-                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes"]}
+                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked"]}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
     print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
