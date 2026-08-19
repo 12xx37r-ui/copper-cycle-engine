@@ -15,11 +15,16 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD_PATH = ROOT / "public/data/copper_fundamentals.json"
 HISTORY_PATH = ROOT / "public/data/official_inventory_history.json"
+API_HEALTH_PATH = ROOT / "public/data/api_health.json"
+STATE_PATH = ROOT / "public/data/official_inventory_state.json"
+OFFICIAL_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_OFFICIAL_INVENTORY_V1_20260819"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V3_20260819"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
+MIRROR_MAX_AGE_DAYS = 21
+WESTMETALL_BASE = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
 
 UA = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
@@ -228,6 +233,140 @@ def collect_lme_monthly(months_back: int = 60) -> tuple[list[dict[str, Any]], li
     return rows, errors
 
 
+
+def _parse_westmetall_html(html: str, source_url: str) -> list[dict[str, Any]]:
+    """Parse Westmetall's daily LME Copper stock history robustly.
+
+    Westmetall mirrors LME Copper cash/3m prices and the LME Copper stock column.
+    The HTML layout can be rendered with repeated header rows, flattened columns,
+    or generic integer column labels depending on pandas/lxml versions.  Therefore
+    this parser does NOT depend on DataFrame column names.  A valid observation must
+    have a leading calendar date plus at least three numeric cells; the final numeric
+    cell is the stock column.  This mirrors the public datatable layout exactly.
+    """
+    out: list[dict[str, Any]] = []
+    if not html:
+        return out
+
+    def add_row(raw_date: Any, raw_values: Iterable[Any]) -> None:
+        text = str(raw_date).strip()
+        # Require an actual Westmetall-style day/month/year date; this prevents
+        # repeated header rows and unrelated numeric tables from being accepted.
+        if not re.search(r'\b\d{1,2}\.?\s+[A-Za-z]+\s+20\d{2}\b', text):
+            return
+        try:
+            dt = pd.to_datetime(text, dayfirst=True, errors='raise').date()
+        except Exception:
+            return
+        vals = []
+        for value in raw_values:
+            v = _num(value)
+            if v is not None:
+                vals.append(v)
+        # Datatable order is cash, 3-month, stock.  The stock field is the final
+        # numeric cell and should be plausible LME tonnes.
+        if len(vals) < 3:
+            return
+        stock = vals[-1]
+        if not (1_000 <= stock <= 5_000_000):
+            return
+        out.append({
+            'date': dt.isoformat(),
+            'components': {'lme': stock},
+            'basket': 'lme_mirror',
+            'totalTonnes': stock,
+            'cadence': 'daily',
+            'source': 'Westmetall mirror of LME Copper stock',
+            'sourceClass': 'exchange_mirror',
+            'officialUnderlying': 'LME',
+            'sourceUrl': source_url,
+        })
+
+    # Route 1: pandas tables, independent of whatever header pandas inferred.
+    try:
+        for df in pd.read_html(io.StringIO(html), header=None):
+            if df is None or df.empty:
+                continue
+            for _, row in df.iterrows():
+                cells = list(row.values)
+                if len(cells) < 4:
+                    continue
+                add_row(cells[0], cells[1:])
+    except Exception:
+        pass
+
+    # Route 2: parse individual HTML rows/cells. This survives table/header changes.
+    if not out:
+        for tr in re.findall(r'<tr\b[^>]*>(.*?)</tr>', html, re.I | re.S):
+            cells = re.findall(r'<t[dh]\b[^>]*>(.*?)</t[dh]>', tr, re.I | re.S)
+            clean_cells=[]
+            for c in cells:
+                c=re.sub(r'<[^>]+>', ' ', c)
+                c=re.sub(r'&nbsp;|&#160;', ' ', c, flags=re.I)
+                c=re.sub(r'\s+', ' ', c).strip()
+                clean_cells.append(c)
+            if len(clean_cells) >= 4:
+                add_row(clean_cells[0], clean_cells[1:])
+
+    # Route 3: textual fallback for proxies/CDNs that flatten the table markup.
+    if not out:
+        plain = re.sub(r'<script.*?</script>|<style.*?</style>', ' ', html, flags=re.I|re.S)
+        plain = re.sub(r'<[^>]+>', ' | ', plain)
+        plain = re.sub(r'&nbsp;|&#160;', ' ', plain, flags=re.I)
+        plain = re.sub(r'\s+', ' ', plain)
+        pat = re.compile(
+            r'(\d{1,2}\.?\s+[A-Za-z]+\s+20\d{2})\s*\|\s*'
+            r'([\d,]+(?:\.\d+)?)\s*\|\s*([\d,]+(?:\.\d+)?)\s*\|\s*([\d,]+)',
+            re.I,
+        )
+        for m in pat.finditer(plain):
+            add_row(m.group(1), (m.group(2), m.group(3), m.group(4)))
+
+    by_date = {r['date']: r for r in out}
+    return [by_date[k] for k in sorted(by_date)]
+
+def collect_lme_mirror(years_back: int = HISTORY_YEARS) -> tuple[list[dict[str, Any]], list[str]]:
+    """Collect a machine-readable mirror of LME Copper stocks as a last resort.
+
+    Direct official exchange retrieval always has priority.  The mirror is useful
+    for percentile and 13-week direction when LME's files are blocked to an
+    unauthenticated GitHub runner.  It is never labelled as an official source.
+    """
+    today = date.today()
+    rows: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for y in range(today.year, today.year - years_back - 1, -1):
+        # The unqualified URL is Westmetall's canonical current-year page; older
+        # years use the explicit `year=` query parameter. Trying both for the
+        # current year makes the collector tolerant of server-side query handling.
+        urls = [WESTMETALL_BASE] if y == today.year else []
+        urls.append(f"{WESTMETALL_BASE}&year={y}")
+        year_rows=[]
+        year_errors=[]
+        for url in dict.fromkeys(urls):
+            try:
+                rr = _request(url, timeout=25)
+                parsed = _parse_westmetall_html(rr.text, url)
+                if parsed:
+                    year_rows.extend(parsed)
+                    break
+                year_errors.append(f"parsed no LME Copper stock rows: {url}")
+            except Exception as e:
+                year_errors.append(f"{type(e).__name__}: {url}")
+        if not year_rows:
+            errors.append(f"Westmetall {y}: {'; '.join(year_errors)}")
+        rows.extend(year_rows)
+
+    by_date = {r["date"]: r for r in rows}
+    rows = [by_date[k] for k in sorted(by_date)]
+    if rows:
+        latest = date.fromisoformat(rows[-1]["date"])
+        age = (today - latest).days
+        if age > MIRROR_MAX_AGE_DAYS:
+            errors.append(f"Westmetall mirror stale: latest {latest.isoformat()} age {age}d")
+            return [], errors
+    return rows, errors
+
 def collect_shfe_current() -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
     urls = [
@@ -280,6 +419,30 @@ def collect_comex_current() -> tuple[dict[str, Any] | None, list[str]]:
         errors.append(f"CME/COMEX {type(e).__name__}")
     return None, errors
 
+
+
+def _read_state() -> dict[str, Any]:
+    try:
+        x=json.loads(STATE_PATH.read_text())
+        return x if isinstance(x,dict) else {}
+    except Exception:
+        return {}
+
+def _write_state(state: dict[str, Any]) -> None:
+    STATE_PATH.parent.mkdir(parents=True,exist_ok=True)
+    STATE_PATH.write_text(json.dumps(state,ensure_ascii=False,indent=2))
+
+def _official_attempt_due(state: dict[str, Any]) -> bool:
+    raw=state.get('lastOfficialAttemptAt')
+    if not raw:
+        return True
+    try:
+        dt=datetime.fromisoformat(str(raw).replace('Z','+00:00'))
+        if dt.tzinfo is None:
+            dt=dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc)-dt.astimezone(timezone.utc)).total_seconds() >= OFFICIAL_RETRY_HOURS*3600
+    except Exception:
+        return True
 
 def _read_history(path: Path = HISTORY_PATH) -> list[dict[str, Any]]:
     try:
@@ -371,7 +534,7 @@ def choose_primary_metrics(history: list[dict[str, Any]]) -> dict[str, Any]:
     Priority is LME+SHFE (if ever collected as one matched basket), then LME, then
     SHFE, then COMEX. We never compare current LME against historical LME+SHFE.
     """
-    priority = ["lme_shfe", "lme", "shfe", "comex"]
+    priority = ["lme_shfe", "lme", "shfe", "comex", "lme_mirror"]
     candidates = [compute_basket_metrics(history, b) for b in priority]
     usable = [x for x in candidates if x.get("currentValue") is not None]
     if not usable:
@@ -392,10 +555,13 @@ def choose_primary_metrics(history: list[dict[str, Any]]) -> dict[str, Any]:
 
 def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: list[str]) -> dict[str, Any]:
     physical = payload.setdefault("physical", {})
+    evidence_class = "exchange_mirror" if metrics.get("basket") == "lme_mirror" else "official_exchange"
     official = {
         "collectorVersion": COLLECTOR_VERSION,
         "status": metrics.get("status"),
         "basket": metrics.get("basket"),
+        "evidenceClass": evidence_class,
+        "officialSourceAvailable": evidence_class == "official_exchange",
         "dataAt": metrics.get("dataAt"),
         "cadence": metrics.get("cadence"),
         "source": metrics.get("source"),
@@ -414,16 +580,18 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
     # COMEX remains a separately-labelled basket because its report unit semantics
     # differ from LME/SHFE tonnage; the dashboard can still consume the percentile/
     # trend, but visibleInventoryTonnes is not falsely labelled tonnes.
-    if metrics.get("basket") in {"lme", "shfe", "lme_shfe"}:
+    if metrics.get("basket") in {"lme", "shfe", "lme_shfe", "lme_mirror"}:
         physical["visibleInventoryTonnes"] = metrics.get("currentValue")
     if metrics.get("percentile") is not None:
         physical["inventoryScore"] = metrics["percentile"]
     if metrics.get("changePct13w") is not None:
         physical["inventoryChangePct13w"] = metrics["changePct13w"]
     if metrics.get("currentValue") is not None:
-        physical["inventoryMode"] = f"official_{metrics['basket']}"
-        physical["officialObservationCount"] = metrics.get("observationCount", 0)
+        physical["inventoryMode"] = ("exchange_mirror_lme" if metrics.get("basket") == "lme_mirror" else f"official_{metrics['basket']}")
+        physical["officialObservationCount"] = metrics.get("observationCount", 0) if evidence_class == "official_exchange" else 0
+        physical["inventoryObservationCount"] = metrics.get("observationCount", 0)
         physical["inventoryDataAt"] = metrics.get("dataAt")
+        physical["inventoryEvidenceClass"] = evidence_class
 
     # Explicit engine-level values for the four dashboard outputs.
     payload["officialIndicators"] = {
@@ -435,6 +603,10 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
         "inventoryDataAt": metrics.get("dataAt"),
         "inventoryObservationCount": metrics.get("observationCount", 0),
         "inventoryStatus": metrics.get("status"),
+        "inventoryEvidenceClass": evidence_class,
+        "officialSourceAvailable": evidence_class == "official_exchange",
+        "inventorySource": metrics.get("source"),
+        "inventorySourceUrl": metrics.get("sourceUrl"),
         "supplySource": (payload.get("supply") or {}).get("source"),
         "supplyEventCount": (payload.get("supply") or {}).get("eventCount"),
     }
@@ -449,12 +621,13 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
         }
     else:
         complete = metrics.get("changePct13w") is not None and metrics.get("percentile") is not None
+        is_mirror = metrics.get("basket") == "lme_mirror"
         health["official_inventory_derived"] = {
-            "status": "CACHE" if metrics.get("cadence") in {"monthly", "weekly"} else "LIVE",
+            "status": "FALLBACK" if is_mirror else ("CACHE" if metrics.get("cadence") in {"monthly", "weekly"} else "LIVE"),
             "source": metrics.get("source"), "dataAt": metrics.get("dataAt"),
             "usedInCalculation": bool(complete),
-            "reliability": 0.95 if complete else 0.75,
-            "fallback": None if complete else "Official value recovered; history still insufficient for all derived metrics",
+            "reliability": (0.80 if complete else 0.65) if is_mirror else (0.95 if complete else 0.75),
+            "fallback": ("Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror" if is_mirror else (None if complete else "Official value recovered; history still insufficient for all derived metrics")),
             "url": metrics.get("sourceUrl"),
         }
     return payload
@@ -463,12 +636,30 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
 def run() -> dict[str, Any]:
     payload = json.loads(PAYLOAD_PATH.read_text())
     old = _read_history()
+    state = _read_state()
 
-    lme_rows, lme_errors = collect_lme_monthly(months_back=60)
-    shfe_current, shfe_errors = collect_shfe_current()
-    comex_current, comex_errors = collect_comex_current()
+    # The mirror is the practical history path when exchange anti-bot blocks
+    # GitHub Actions. First successful run backfills five years; subsequent runs
+    # fetch only the current year and merge into the committed local history.
+    old_mirror=[r for r in old if isinstance(r,dict) and r.get('basket')=='lme_mirror']
+    mirror_years = 0 if len(old_mirror) >= MIN_PERCENTILE_OBS else HISTORY_YEARS
+    mirror_rows, mirror_errors = collect_lme_mirror(years_back=mirror_years)
 
-    new_groups: list[list[dict[str, Any]]] = [lme_rows]
+    lme_rows=[]; lme_errors=[]; shfe_current=None; shfe_errors=[]; comex_current=None; comex_errors=[]
+    if _official_attempt_due(state):
+        # Keep probing true exchange sources, but do not hammer dozens of blocked
+        # historical URLs every 30-minute market run. The mirror supplies history;
+        # official routes are retried on a six-hour cadence.
+        lme_rows, lme_errors = collect_lme_monthly(months_back=4)
+        shfe_current, shfe_errors = collect_shfe_current()
+        comex_current, comex_errors = collect_comex_current()
+        state['lastOfficialAttemptAt']=datetime.now(timezone.utc).isoformat()
+        state['lastOfficialErrors']=(lme_errors+shfe_errors+comex_errors)[-20:]
+        _write_state(state)
+    else:
+        lme_errors=['official exchange retry cadence not due; using committed history/current mirror']
+
+    new_groups: list[list[dict[str, Any]]] = [lme_rows, mirror_rows]
     if shfe_current:
         new_groups.append([shfe_current])
     if comex_current:
@@ -477,9 +668,15 @@ def run() -> dict[str, Any]:
     history = merge_history(old, *new_groups)
     _write_history(history)
     metrics = choose_primary_metrics(history)
-    errors = lme_errors + shfe_errors + comex_errors
+    errors = lme_errors + shfe_errors + comex_errors + mirror_errors
     payload = apply_to_payload(payload, metrics, errors)
+    # Record the actual enrichment check time so the health panel can distinguish
+    # a fresh mirror observation from a stale one.
+    h=((payload.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived')
+    if isinstance(h,dict):
+        h['checkedAt']=datetime.now(timezone.utc).isoformat()
     PAYLOAD_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+    API_HEALTH_PATH.write_text(json.dumps(payload.get("apiHealth") or {}, ensure_ascii=False, indent=2))
 
     result = {
         "ok": True,
@@ -491,11 +688,13 @@ def run() -> dict[str, Any]:
         "officialVisibleInventoryTrend13w": metrics.get("trendScore13w"),
         "mineSupplyDisruption": (payload.get("supply") or {}).get("supplyDisruptionScore"),
         "observationCount": metrics.get("observationCount", 0),
+        "inventoryEvidenceClass": ("exchange_mirror" if metrics.get("basket") == "lme_mirror" else "official_exchange"),
+        "inventorySource": metrics.get("source"),
+        "officialRetryDue": _official_attempt_due(state),
         "errors": errors[-10:],
     }
     print(json.dumps(result, ensure_ascii=False))
     return result
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()

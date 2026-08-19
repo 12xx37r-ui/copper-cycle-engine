@@ -962,5 +962,18 @@ def main():
                       "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Unavailable official inventory is retried on a 6-hour cadence until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked","Google News supply events are hard-filtered by parsed publication date to the last 14 days because RSS query windows can return stale articles","Unauthenticated LME/SHFE official inventory may remain unavailable because LME report downloads can require account access and SHFE may present anti-bot verification; the engine never substitutes a proxy into official fields"]}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
-    print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
+
+    # V3 inventory evidence enrichment is part of the collector transaction.
+    # This guarantees GitHub Actions cannot accidentally publish a base payload
+    # without the three inventory-derived dashboard fields. Official exchange
+    # data remains first priority; a clearly-labelled LME stock mirror is the
+    # last-resort evidence path when LME/SHFE/CME block the runner.
+    enrich_result=None
+    try:
+        from official_inventory_enricher import run as enrich_official_inventory
+        enrich_result=enrich_official_inventory()
+    except Exception as e:
+        enrich_result={"ok":False,"error":f"{type(e).__name__}: {e}"}
+
+    print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH),"officialInventoryEnrichment":enrich_result},ensure_ascii=False))
 if __name__=='__main__':main()
