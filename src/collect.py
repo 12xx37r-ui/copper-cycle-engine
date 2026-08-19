@@ -18,8 +18,8 @@ UA = {
     "Accept-Language":"en-US,en;q=0.9"
 }
 ENGINE_MODEL_VERSION = "COPPER_ENGINE_V3_20260819"
-SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V3_20260819"
-INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V3_20260819"
+SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
+INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V4_20260819"
 
 API_HEALTH = ROOT / "public/data/api_health.json"
 try:
@@ -365,7 +365,7 @@ def _extract_lme_monthly_links(html, base_url):
         seen.add((y,mo)); out.append((y,mo,u))
     return out
 
-def _lme_monthly_stock_history(max_reports=8):
+def _lme_monthly_stock_history(max_reports=5):
     """
     Seed official LME history from the public monthly Stocks summary XLSX files.
     Important: use deterministic official file URLs first, because the LME HTML
@@ -498,7 +498,7 @@ def inventory_sources():
     # 2) Official public LME monthly Stocks Summary fallback.
     # This is still official inventory; it is just lower cadence than the daily report.
     if out['lmeInventoryTonnes'] is None:
-      monthly=_lme_monthly_stock_history(max_reports=8)
+      monthly=_lme_monthly_stock_history(max_reports=5)
       if monthly:
         latest=monthly[-1]
         out['lmeInventoryTonnes']=num(latest.get('lme'))
@@ -557,23 +557,28 @@ def concentrate_proxy(copper_rows=None):
 
 def disruptions():
     """
-    Copper-specific supply-event score.
-    Company-name-only matches are not sufficient (e.g. Freeport LNG is NOT
-    Freeport-McMoRan copper supply). Multiple articles about the same asset/event
-    are collapsed to one contribution.
+    Copper-specific supply-event score with hard 14-day publication gate.
+    Google News `when:14d` is not trusted by itself because RSS can surface
+    stale/evergreen results. Articles without a parseable publication date are
+    excluded from scoring.
     """
+    now=datetime.now(timezone.utc)
+    cutoff=now-timedelta(days=14)
+    future_limit=now+timedelta(days=1)
+
     feeds=[
       'https://news.google.com/rss/search?q=%28%22copper+mine%22+OR+%22copper+smelter%22+OR+%22copper+refinery%22+OR+codelco+OR+escondida+OR+grasberg+OR+%22cobre+panama%22+OR+kamoa+OR+kakula+OR+collahuasi+OR+%22las+bambas%22+OR+%22cerro+verde%22+OR+quellaveco+OR+chuquicamata+OR+%22el+teniente%22+OR+viscaria%29+%28strike+OR+outage+OR+suspension+OR+%22force+majeure%22+OR+accident+OR+restart+OR+shutdown+OR+closure%29+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen'
     ]
+
     event_keywords=[
       ('force majeure',18),('shutdown',15),('suspension',15),('closure',15),
       ('production cut',12),('guidance cut',12),('strike',12),('outage',12),
       ('accident',10),('fatal',10),('dies',8),
-      ('restart delayed',10),('restart push',10),('pushes back',10),('delay',8),
+      ('restart delayed',10),('restart push',10),('pushes back',10),
+      ('postponed',10),('delay',8),
       ('restart',-8),('recovery',-6),('resume',-6),('reopen',-6)
     ]
-    # Named assets are safe copper-context anchors. Generic company names such as
-    # "Freeport" and "Glencore" are intentionally absent.
+
     assets={
       'cobre_panama':['cobre panama'],
       'grasberg':['grasberg','freeport indonesia'],
@@ -589,74 +594,134 @@ def disruptions():
       'codelco_other':['codelco']
     }
 
+    def event_time(entry):
+        raw=entry.get('published') or entry.get('updated')
+        if not raw:
+            return None
+        try:
+            dt=parsedate_to_datetime(raw)
+            if dt.tzinfo is None:
+                dt=dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            try:
+                dt=datetime.fromisoformat(str(raw).replace('Z','+00:00'))
+                if dt.tzinfo is None:
+                    dt=dt.replace(tzinfo=timezone.utc)
+                return dt.astimezone(timezone.utc)
+            except Exception:
+                return None
+
     candidates=[]
+    stale_rejected=0
+    undated_rejected=0
+
     for url in feeds:
       d=feedparser.parse(fetch(url,timeout=20).content)
-      for e in d.entries[:80]:
+      for e in d.entries[:100]:
+        published_at=event_time(e)
+        if published_at is None:
+          undated_rejected+=1
+          continue
+        if published_at < cutoff or published_at > future_limit:
+          stale_rejected+=1
+          continue
+
         title=(e.get('title') or '').strip()
         norm=re.sub(r'\s+',' ',title.lower())
         norm=re.sub(r'\s+-\s+[^-]{2,80}$','',norm)
         if not norm:
           continue
 
+        # Reject ambiguous non-copper company/context collisions.
+        if any(x in norm for x in [
+          'freeport lng','natural gas','realty','real estate','maharera','credai',
+          'oil refinery','lng plant','gas plant'
+        ]):
+          continue
+
         asset=None
         for key,aliases in assets.items():
           if any(a in norm for a in aliases):
-            asset=key; break
+            asset=key
+            break
 
         generic_copper=(
           'copper mine' in norm or 'copper mining' in norm or
           'copper smelter' in norm or 'copper refinery' in norm or
-          ('copper' in norm and any(x in norm for x in ['mine','mining','smelter','refinery','concentrate']))
+          ('copper' in norm and any(x in norm for x in [
+            'mine','mining','smelter','refinery','concentrate'
+          ]))
         )
         if asset is None and not generic_copper:
-          continue
-
-        # Explicitly reject known ambiguous non-copper contexts.
-        if any(x in norm for x in ['freeport lng','natural gas','realty','real estate','maharera','credai']):
           continue
 
         impacts=[w for k,w in event_keywords if k in norm]
         if not impacts:
           continue
-        # Avoid counting "restart" as relief when the same title says the restart
-        # was delayed/pushed back.
-        if any(x in norm for x in ['restart delayed','restart push','pushes back','restart by a year','restart postponed']):
+
+        delayed=any(x in norm for x in [
+          'restart delayed','restart push','pushes back',
+          'restart by a year','restart postponed','postponed'
+        ])
+        if delayed:
           hit=max([x for x in impacts if x>0] or [8])
         else:
           hit=max(impacts,key=lambda x:abs(x))
         hit=max(-12,min(20,hit))
 
-        # Generic unnamed copper events cluster by a compact title fingerprint.
+        # Age decay: very recent events matter more; older within-window stories
+        # remain evidence but cannot dominate.
+        age_days=max(0.0,(now-published_at).total_seconds()/86400.0)
+        age_factor=1.0 if age_days<=3 else 0.75 if age_days<=7 else 0.50
+        weighted=int(round(hit*age_factor))
+
         if asset is None:
           fp=re.sub(r'[^a-z0-9 ]',' ',norm)
-          fp=' '.join(w for w in fp.split() if w not in {'copper','mine','mining','the','a','an','in','at','on','of','to','and','says','company'})
+          fp=' '.join(w for w in fp.split() if w not in {
+            'copper','mine','mining','the','a','an','in','at','on','of','to',
+            'and','says','company'
+          })
           asset='generic:'+(' '.join(fp.split()[:6]) or norm[:60])
 
         candidates.append({
-          "asset":asset,"title":title,"link":e.get('link'),"impact":hit,
-          "published":e.get('published') or e.get('updated')
+          "asset":asset,
+          "title":title,
+          "link":e.get('link'),
+          "impact":weighted,
+          "rawImpact":hit,
+          "ageDays":round(age_days,2),
+          "published":published_at.isoformat()
         })
 
-    # One contribution per asset/event cluster. Prefer the strongest absolute
-    # supply impact; on ties retain the first/newest feed item.
+    # One contribution per copper asset. Prefer the newest event first; if two
+    # events are on the same day, retain the stronger absolute impact.
     by_asset={}
-    for x in candidates:
+    for x in sorted(candidates,key=lambda z:z['published'],reverse=True):
       old=by_asset.get(x['asset'])
-      if old is None or abs(x['impact'])>abs(old['impact']):
+      if old is None:
         by_asset[x['asset']]=x
+      else:
+        same_day=x['published'][:10]==old['published'][:10]
+        if same_day and abs(x['impact'])>abs(old['impact']):
+          by_asset[x['asset']]=x
 
     items=list(by_asset.values())
     raw=sum(x['impact'] for x in items)
     score=clamp(raw,0,100)
+    items.sort(key=lambda x:x['published'],reverse=True)
     public_items=[{k:v for k,v in x.items() if k!='asset'} for x in items[:12]]
+
     return {
       "supplyDisruptionScore":score,
       "events":public_items,
       "eventCount":len(items),
       "rawNetImpact":raw,
+      "staleRejected":stale_rejected,
+      "undatedRejected":undated_rejected,
+      "windowDays":14,
       "filterVersion":SUPPLY_FILTER_VERSION,
-      "source":"Google News RSS; copper-asset filtered and asset-clustered event score, not tonnage estimate"
+      "source":"Google News RSS; strict 14-day publication gate + copper-asset clustering + age decay; not tonnage estimate"
     }
 
 def clean_history_rows(data, today, new_row, retention_weeks=26):
@@ -720,7 +785,7 @@ def history_inventory(today, inv, proxy):
     if len(official_existing) < 4:
         seeded=(inv.get('lmeMonthlyHistory') or []) if isinstance(inv,dict) else []
         if not seeded:
-            seeded=_lme_monthly_stock_history(max_reports=8)
+            seeded=_lme_monthly_stock_history(max_reports=5)
         data=_merge_official_backfill(data,seeded)
 
     lme=num(inv.get('lmeInventoryTonnes'))
@@ -806,9 +871,9 @@ def main():
 
     prev_phys=previous_section('physical') or {}
     prev_official=prev_phys.get('lmeInventoryTonnes') is not None or prev_phys.get('shfeInventoryTonnes') is not None
-    # Failed/null inventory is never allowed to hide behind the normal 2h cadence.
-    # Retry every workflow run until at least one official exchange value exists.
-    if is_due('inventory',2) or not prev_official:
+    # Exchange WAF/login restrictions are persistent, so retry on the normal
+    # publication-aware cadence rather than hammering LME/SHFE every 30 minutes.
+    if is_due('inventory',6):
         inv=inventory_sources()
         inv['collectorVersion']=INVENTORY_COLLECTOR_VERSION
         official_ok=inv.get('lmeInventoryTonnes') is not None or inv.get('shfeInventoryTonnes') is not None
@@ -822,9 +887,12 @@ def main():
         else:
             RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='official sources retried this run; diagnostic free supply proxy excluded from score')
     else:
-        inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses','collectorVersion')}
+        inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses','collectorVersion','dataAt','cadence','lmeMonthlyHistory')}
         inv['sources']=inv.get('sources') or {}; inv['statuses']=inv.get('statuses') or {}
-        RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,ttl_s=24*3600)
+        if prev_official:
+            RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,reliability=0.90,ttl_s=24*3600)
+        else:
+            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=False,reliability=0.0,alternative='official exchange access remains blocked/unavailable; next retry cadence 6h')
 
     shared_copper=(price.get('dailyCandles') or [])
     china=china_cycle_proxy(shared_copper)
@@ -888,7 +956,7 @@ def main():
                       "Free supply proxy is diagnostic-only when official inventory is unavailable",
                       "China cycle score uses FXI only; copper price momentum is diagnostic-only",
                       "13-week inventory change uses a calendar 91-day lag rather than observation count",
-                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked"]}
+                      "Mine disruption score requires copper-specific context and is deduplicated news-event evidence, not a tonnage estimate","Public LME monthly stock-summary XLSX files are fetched directly to seed official inventory history when fewer than four official observations exist","Null official-inventory cache is retried every workflow run until an exchange value is recovered","Supply cache is invalidated when the copper-relevance filter version changes","Supply events are clustered by copper asset so duplicate restart/outage stories do not multiply the score","Official LME monthly inventory is accepted as a lower-cadence official fallback with its true publication date when daily access is blocked","Google News supply events are hard-filtered by parsed publication date to the last 14 days because RSS query windows can return stale articles","Unauthenticated LME/SHFE official inventory may remain unavailable because LME report downloads can require account access and SHFE may present anti-bot verification; the engine never substitutes a proxy into official fields"]}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2))
     API_HEALTH.write_text(json.dumps(RUNTIME.health(),ensure_ascii=False,indent=2))
     print(json.dumps({"ok":True,"out":str(OUT),"generatedAt":payload['generatedAt'],"apiHealth":str(API_HEALTH)},ensure_ascii=False))
