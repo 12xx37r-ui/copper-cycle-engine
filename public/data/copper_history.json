@@ -89,5 +89,12 @@
     "shfe": null,
     "inventoryScore": 69.70717593597665,
     "inventoryMode": "diagnostic_proxy"
+  },
+  {
+    "date": "2026-08-20",
+    "lme": null,
+    "shfe": null,
+    "inventoryScore": 68.75106854005828,
+    "inventoryMode": "diagnostic_proxy"
   }
 ]
