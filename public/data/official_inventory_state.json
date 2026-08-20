@@ -1,5 +1,5 @@
 {
-  "lastOfficialAttemptAt": "2026-08-20T09:18:05.932670+00:00",
+  "lastOfficialAttemptAt": "2026-08-20T16:01:27.375886+00:00",
   "lastOfficialErrors": [
     "2026-07 lme_stocks_summary: parsed no copper total",
     "2026-07 lme_warehouse_queue: parsed no copper total",
@@ -9,10 +9,10 @@
     "2026-05 lme_warehouse_queue: parsed no copper total",
     "2026-04 lme_stocks_summary: parsed no copper total",
     "2026-04 lme_warehouse_queue: parsed no copper total",
-    "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
-    "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
+    "SHFE parsed no copper total: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
+    "SHFE parsed no copper total: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
     "CME/COMEX HTTPError"
   ],
-  "lastMirrorAttemptAt": "2026-08-20T09:18:01.438387+00:00",
+  "lastMirrorAttemptAt": "2026-08-20T16:01:21.516850+00:00",
   "lastMirrorErrors": []
 }
