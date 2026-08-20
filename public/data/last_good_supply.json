@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-20T09:18:06.075397+00:00",
-  "generatedAt": "2026-08-20T09:17:57.437771+00:00",
+  "savedAt": "2026-08-20T10:57:18.593783+00:00",
+  "generatedAt": "2026-08-20T10:57:15.219878+00:00",
   "supply": {
     "supplyDisruptionScore": 0,
     "events": [],
@@ -16,12 +16,12 @@
   "health": {
     "status": "LIVE",
     "source": "Google News RSS",
-    "dataAt": "2026-08-20T09:17:57.437771+00:00",
-    "ageSeconds": 2.9,
+    "dataAt": "2026-08-20T10:57:15.219878+00:00",
+    "ageSeconds": 3.2,
     "usedInCalculation": true,
     "reliability": 0.75,
     "fallback": "event proxy; not verified disrupted tonnage",
     "url": "https://news.google.com/",
-    "checkedAt": "2026-08-20T09:18:00.311765+00:00"
+    "checkedAt": "2026-08-20T10:57:18.427050+00:00"
   }
 }
