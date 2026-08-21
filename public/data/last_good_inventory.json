@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T03:35:09.057395+00:00",
-  "generatedAt": "2026-08-21T03:35:02.626667+00:00",
+  "savedAt": "2026-08-21T05:00:10.147017+00:00",
+  "generatedAt": "2026-08-21T04:59:59.595735+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,16 +21,16 @@
     "officialObservationCount": 0,
     "inventoryDataAt": "2026-08-19",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 68.05956160811213,
-    "freeSupplyProxyTrendEquivalent": 10.83573696486728,
+    "freeSupplyProxyScore": 68.44397984445071,
+    "freeSupplyProxyTrendEquivalent": 11.066387906670425,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
     "chinaDemandProxyScore": 60.5339447181054,
-    "curveSpreadPct": 1.1684594828270667,
-    "curveScore": 79.21148707067667,
-    "concentrateTightnessProxy": 16.929992558972913,
+    "curveSpreadPct": 1.191952642246208,
+    "curveScore": 79.7988160561552,
+    "concentrateTightnessProxy": 16.47622384097636,
     "officialInventoryDerived": {
-      "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V3_20260819",
-      "status": "ok",
+      "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_20260821",
+      "status": "FALLBACK",
       "basket": "lme_mirror",
       "evidenceClass": "exchange_mirror",
       "officialSourceAvailable": false,
@@ -47,12 +47,130 @@
         "lme": 235975.0
       },
       "errors": [
-        "official exchange retry cadence not due; using committed history/current mirror",
+        "2026-07 lme_stocks_summary: parsed no copper total",
+        "2026-07 lme_warehouse_queue: parsed no copper total",
+        "2026-06 lme_stocks_summary: parsed no copper total",
+        "2026-06 lme_warehouse_queue: parsed no copper total",
+        "2026-05 lme_stocks_summary: parsed no copper total",
+        "2026-05 lme_warehouse_queue: parsed no copper total",
+        "2026-04 lme_stocks_summary: parsed no copper total",
+        "2026-04 lme_warehouse_queue: parsed no copper total",
+        "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
+        "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
+        "CME/COMEX HTTPError",
         "LME mirror refresh cadence not due; using committed mirror history"
       ]
     },
     "inventoryObservationCount": 1293,
-    "inventoryEvidenceClass": "exchange_mirror"
+    "inventoryEvidenceClass": "exchange_mirror",
+    "diagnostics": {
+      "lmeOfficialMonthly": [
+        {
+          "provider": "LME",
+          "route": "lme_stocks_summary",
+          "period": "2026-07",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 57031,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:05.724115+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_warehouse_queue",
+          "period": "2026-07",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-july-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-july-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 20396,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:05.963908+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_stocks_summary",
+          "period": "2026-06",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 56968,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:06.310915+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_warehouse_queue",
+          "period": "2026-06",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-june-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-june-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 21652,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:06.478399+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_stocks_summary",
+          "period": "2026-05",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 56836,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:06.750187+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_warehouse_queue",
+          "period": "2026-05",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-may-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-may-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 22083,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:06.972157+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_stocks_summary",
+          "period": "2026-04",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-april-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-april-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 56878,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:07.234492+00:00"
+        },
+        {
+          "provider": "LME",
+          "route": "lme_warehouse_queue",
+          "period": "2026-04",
+          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-april-2026.xlsx",
+          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-april-2026.xlsx",
+          "statusCode": 200,
+          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "contentLength": 22014,
+          "tableCount": 1,
+          "reason": "parsed_no_copper_total",
+          "checkedAt": "2026-08-21T05:00:07.410526+00:00"
+        }
+      ]
+    }
   },
   "officialIndicators": {
     "officialVisibleInventoryPercentile": 76.64346481051817,
@@ -78,6 +196,6 @@
     "reliability": 0.8,
     "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
     "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-    "checkedAt": "2026-08-21T03:35:08.931939+00:00"
+    "checkedAt": "2026-08-21T05:00:09.995778+00:00"
   }
 }
