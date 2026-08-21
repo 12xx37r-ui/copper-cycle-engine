@@ -21,7 +21,7 @@ STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_4_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_5_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -196,6 +196,74 @@ def _copper_total_from_table(df: pd.DataFrame) -> float | None:
     return None
 
 
+def _lme_stocks_summary_total_from_table(df: pd.DataFrame) -> float | None:
+    """Parse LME Stocks Summary workbook using both metal names and LME metal codes.
+
+    The current monthly workbook can expose a wide time-series header such as
+    ``BusinessDate, AA, AH, CA, CO, NI, PB, SN, ZS`` where ``CA`` is the LME
+    code for Copper.  In that layout there is no literal ``Copper`` string, so
+    the generic parser cannot discover the copper column.
+    """
+    if df is None or df.empty:
+        return None
+
+    # First retain all previously supported layouts.
+    generic = _copper_total_from_table(df)
+    if generic is not None:
+        return generic
+
+    # LME metal-code layout.  Require BusinessDate in the same header row so
+    # that a bare ``CA`` elsewhere cannot be misinterpreted as copper.
+    date_header_re = re.compile(r"^\s*business\s*date\s*$|^\s*businessdate\s*$", re.I)
+    copper_code_re = re.compile(r"^\s*CA\s*$", re.I)
+
+    for ridx in range(min(len(df), 40)):
+        row = list(df.iloc[ridx].values)
+        date_cols = [i for i, v in enumerate(row) if date_header_re.match(str(v))]
+        copper_cols = [i for i, v in enumerate(row) if copper_code_re.match(str(v))]
+        if not date_cols or not copper_cols:
+            continue
+        dcol = date_cols[0]
+        ccol = copper_cols[0]
+
+        dated_values: list[tuple[pd.Timestamp, float]] = []
+        for j in range(ridx + 1, len(df)):
+            r = list(df.iloc[j].values)
+            if max(dcol, ccol) >= len(r):
+                continue
+            raw_date = r[dcol]
+            raw_value = r[ccol]
+            dt = pd.to_datetime(raw_date, errors="coerce")
+            value = _num(raw_value)
+            if pd.isna(dt) or value is None:
+                continue
+            # LME copper stock is reported in tonnes; keep a conservative range.
+            if not (500 <= value <= 10_000_000):
+                continue
+            dated_values.append((pd.Timestamp(dt), value))
+
+        if dated_values:
+            dated_values.sort(key=lambda x: x[0])
+            return dated_values[-1][1]
+
+    return None
+
+
+def _lme_queue_table_has_stock_tonnage_context(df: pd.DataFrame) -> bool:
+    """Return True only when a queue workbook section explicitly represents stock tonnage.
+
+    Current LME warehouse-company queue sheets can contain ``Waiting time in days``
+    with a ``Copper`` column.  Those numbers are queue days, not inventory tonnes,
+    and must never be accepted as copper stock simply because the metal name exists.
+    """
+    if df is None or df.empty:
+        return False
+    probe = " ".join(_row_text(list(df.iloc[i].values)) for i in range(min(len(df), 25)))
+    if re.search(r"waiting\s*time\s*in\s*days|queue\s*time\s*in\s*days", probe, re.I):
+        return False
+    return bool(re.search(r"stock(?:s)?\s*(?:tonnes?|mt)|closing\s*stock|stock\s*balance|inventory\s*(?:tonnes?|mt)", probe, re.I))
+
+
 def _table_probe(df: pd.DataFrame, max_rows: int = 14, max_cols: int = 12) -> dict[str, Any]:
     """Return a compact, JSON-safe structural probe for parser failures."""
     if df is None:
@@ -302,13 +370,19 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
                 rr = _request(url, timeout=30)
                 tables = _tables(rr)
                 for t in tables:
-                    found = _copper_total_from_table(t)
+                    if name == "lme_stocks_summary":
+                        found = _lme_stocks_summary_total_from_table(t)
+                    else:
+                        # The warehouse/queue workbook often reports waiting time in
+                        # days by metal.  Never treat those values as inventory tonnes.
+                        found = _copper_total_from_table(t) if _lme_queue_table_has_stock_tonnage_context(t) else None
                     if found is not None:
                         break
                 if found is not None:
                     source_url, route = url, name
                     break
-                errors.append(f"{y}-{m:02d} {name}: parsed no copper total")
+                queue_semantics = (name == "lme_warehouse_queue" and tables and not any(_lme_queue_table_has_stock_tonnage_context(t) for t in tables))
+                errors.append(f"{y}-{m:02d} {name}: " + ("queue sheet is not stock tonnage" if queue_semantics else "parsed no copper total"))
                 diagnostics.append({
                     "provider": "LME",
                     "route": name,
@@ -321,7 +395,7 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
                     "tableCount": len(tables),
                     "sheetNames": [str(getattr(t, "attrs", {}).get("sheet_name", "") or "") for t in tables],
                     "tableProbes": [_table_probe(t) for t in tables[:3]],
-                    "reason": "parsed_no_copper_total",
+                    "reason": ("not_inventory_tonnage_route" if queue_semantics else "parsed_no_copper_total"),
                     "checkedAt": datetime.now(timezone.utc).isoformat(),
                 })
             except Exception as e:
