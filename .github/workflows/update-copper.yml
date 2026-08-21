@@ -76,6 +76,7 @@ jobs:
           print(json.dumps({
             'officialIndicators': d.get('officialIndicators'),
             'lmeDiagnostics': ((d.get('physical') or {}).get('diagnostics') or {}).get('lme'),
+            'lmeOfficialMonthlyDiagnostics': ((d.get('physical') or {}).get('diagnostics') or {}).get('lmeOfficialMonthly'),
             'shfeDiagnostics': ((d.get('physical') or {}).get('diagnostics') or {}).get('shfe'),
             'officialInventoryDerived': (d.get('physical') or {}).get('officialInventoryDerived'),
             'inventoryEvidence': d.get('inventoryEvidence'),
