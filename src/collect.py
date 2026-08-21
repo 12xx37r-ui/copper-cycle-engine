@@ -18,7 +18,7 @@ UA = {
     "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language":"en-US,en;q=0.9"
 }
-ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_20260821"
+ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_2_20260821"
 SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
 INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V5_20260821"
 
@@ -446,7 +446,7 @@ def _extract_lme_monthly_links(html, base_url):
         seen.add((y,mo)); out.append((y,mo,u))
     return out
 
-def _lme_monthly_stock_history(max_reports=5):
+def _lme_monthly_stock_history(max_reports=5, diagnostics=None):
     """
     Seed official LME history from the public monthly Stocks summary XLSX files.
     Important: use deterministic official file URLs first, because the LME HTML
@@ -457,6 +457,7 @@ def _lme_monthly_stock_history(max_reports=5):
                  'july','august','september','october','november','december']
     now=date.today()
     rows=[]
+    diagnostics = diagnostics if isinstance(diagnostics, list) else []
     # Start from previous month: monthly stock summary is published in arrears.
     y,m=now.year,now.month-1
     if m==0:
@@ -481,8 +482,10 @@ def _lme_monthly_stock_history(max_reports=5):
                     'source':'LME Stocks summary',
                     'sourceUrl':url
                 })
-        except Exception:
-            pass
+            else:
+                diagnostics.append(_parse_failure_record('LME monthly deterministic XLSX', url, rr))
+        except Exception as e:
+            diagnostics.append(_request_error_record(e, 'LME monthly deterministic XLSX', url))
         m-=1
         if m==0:
             y-=1;m=12
@@ -515,10 +518,12 @@ def _lme_monthly_stock_history(max_reports=5):
                         known.add(d)
                         if len(rows)>=max_reports:
                             break
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                    else:
+                        diagnostics.append(_parse_failure_record('LME monthly discovered XLSX', link, rr))
+                except Exception as e:
+                    diagnostics.append(_request_error_record(e, 'LME monthly discovered XLSX', link))
+        except Exception as e:
+            diagnostics.append(_request_error_record(e, 'LME monthly stocks-summary HTML discovery', url))
 
     return sorted(rows,key=lambda x:x['date'])
 
@@ -542,20 +547,57 @@ def StringStatus_(v: Any) -> str:
     return str(v or '').strip()
 
 
-def _request_error_detail(exc: Exception, route: str, url: str) -> str:
-    """Compact, actionable diagnostics without persisting response bodies/cookies."""
-    status = None
+def _request_error_record(exc: Exception, route: str, url: str) -> dict:
+    """Structured provider diagnostics without persisting bodies, cookies, or secrets."""
     response = getattr(exc, 'response', None)
-    if response is not None:
-        status = getattr(response, 'status_code', None)
+    status = getattr(response, 'status_code', None) if response is not None else None
+    headers = getattr(response, 'headers', {}) or {} if response is not None else {}
+    ctype = headers.get('content-type') if hasattr(headers, 'get') else None
     kind = type(exc).__name__
-    parts = [route, kind]
-    if status is not None:
-        parts.append(f"HTTP {status}")
-        if status in (401, 403):
-            parts.append('authentication/WAF access restriction likely')
-        elif status == 429:
-            parts.append('rate limited')
+    reason = None
+    if status in (401, 403):
+        reason = 'authentication_or_waf_restriction'
+    elif status == 429:
+        reason = 'rate_limited'
+    elif status is not None and int(status) >= 500:
+        reason = 'upstream_server_error'
+    elif kind in ('Timeout', 'ReadTimeout', 'ConnectTimeout'):
+        reason = 'timeout'
+    elif kind == 'HTTPError':
+        reason = 'http_error'
+    else:
+        reason = 'request_error'
+    return {
+        'route': route,
+        'url': url,
+        'exception': kind,
+        'statusCode': status,
+        'contentType': ctype,
+        'reason': reason,
+        'checkedAt': datetime.now(timezone.utc).isoformat()
+    }
+
+def _parse_failure_record(route: str, url: str, response=None, reason='copper_inventory_not_found') -> dict:
+    headers = getattr(response, 'headers', {}) or {} if response is not None else {}
+    ctype = headers.get('content-type') if hasattr(headers, 'get') else None
+    return {
+        'route': route,
+        'url': url,
+        'exception': 'ParseFailure',
+        'statusCode': getattr(response, 'status_code', None) if response is not None else None,
+        'contentType': ctype,
+        'reason': reason,
+        'checkedAt': datetime.now(timezone.utc).isoformat()
+    }
+
+def _request_error_detail(exc: Exception, route: str, url: str) -> str:
+    """Backward-compatible compact rendering of the structured diagnostic."""
+    rec = _request_error_record(exc, route, url)
+    parts = [route, rec['exception']]
+    if rec.get('statusCode') is not None:
+        parts.append(f"HTTP {rec['statusCode']}")
+    if rec.get('reason'):
+        parts.append(rec['reason'])
     parts.append(url)
     return ' · '.join(parts)
 
@@ -563,7 +605,8 @@ def _request_error_detail(exc: Exception, route: str, url: str) -> str:
 def inventory_sources():
     out={
       "lmeInventoryTonnes":None,"shfeInventoryTonnes":None,
-      "sources":{},"statuses":{},"dataAt":{},"cadence":{}
+      "sources":{},"statuses":{},"dataAt":{},"cadence":{},
+      "diagnostics":{"lme":[],"shfe":[]}
     }
 
     # 1) LME current/daily public warehouse page route.
@@ -593,15 +636,19 @@ def inventory_sources():
                 out['cadence']['lme']='daily'
                 break
             if out['lmeInventoryTonnes'] is not None: break
-          except Exception:
-            pass
+          except Exception as e:
+            out['diagnostics']['lme'].append(_request_error_record(e, 'LME daily downloadable report', link))
+        if out['lmeInventoryTonnes'] is None:
+          out['diagnostics']['lme'].append(_parse_failure_record('LME daily warehouse page parse', lme_url, resp))
     except Exception as e:
+      rec=_request_error_record(e, 'LME daily warehouse route', lme_url)
+      out['diagnostics']['lme'].append(rec)
       out['statuses']['lme_daily']=_request_error_detail(e, 'LME daily warehouse route', lme_url)
 
     # 2) Official public LME monthly Stocks Summary fallback.
     # This is still official inventory; it is just lower cadence than the daily report.
     if out['lmeInventoryTonnes'] is None:
-      monthly=_lme_monthly_stock_history(max_reports=5)
+      monthly=_lme_monthly_stock_history(max_reports=5, diagnostics=out['diagnostics']['lme'])
       if monthly:
         latest=monthly[-1]
         out['lmeInventoryTonnes']=num(latest.get('lme'))
@@ -621,7 +668,8 @@ def inventory_sources():
         rr=fetch(url,timeout=30)
         # Reject obvious WAF/challenge pages before table parsing.
         body=(rr.text or '')[:8000].lower()
-        if 'web 应用防火墙' in body or '人机识别' in body or 'slide' in body and 'captcha' in body:
+        if 'web 应用防火墙' in body or '人机识别' in body or ('slide' in body and 'captcha' in body):
+          out['diagnostics']['shfe'].append(_parse_failure_record('SHFE weekly inventory', url, rr, 'anti_bot_challenge'))
           continue
         for table in _read_tables_from_response(rr):
           found=_copper_total_from_dataframe(table)
@@ -632,8 +680,8 @@ def inventory_sources():
             out['cadence']['shfe']='weekly'
             break
         if out['shfeInventoryTonnes'] is not None: break
-      except Exception:
-        pass
+      except Exception as e:
+        out['diagnostics']['shfe'].append(_request_error_record(e, 'SHFE weekly inventory', url))
 
     if out['shfeInventoryTonnes'] is None:
       out['statuses']['shfe']='official weekly inventory unavailable or blocked by SHFE anti-bot/WAF'
