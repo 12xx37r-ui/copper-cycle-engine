@@ -24,8 +24,9 @@ MIRROR_RETRY_HOURS = 6
 LME_DISCOVERY_RETRY_HOURS = 24
 LME_DOWNLOAD_RETRY_STATUSES = {429, 500, 502, 503, 504}
 LME_DOWNLOAD_MAX_ATTEMPTS = 3
+LME_INDEX_DISCOVERY_ENABLED = str(os.environ.get("COPPER_LME_ENABLE_INDEX_DISCOVERY", "")).strip().lower() in {"1","true","yes","on"}
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_9_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_10_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -459,7 +460,21 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
         if tm == 0:
             ty, tm = ty - 1, 12
     need_network = force or any(obs_date not in existing_lme_dates for _, _, obs_date in requested)
-    discovered = _lme_discover_stock_links(diagnostics) if need_network else {}
+    # Safe-fetch policy: the LME index page itself has repeatedly returned 403 from
+    # GitHub Actions while direct public XLSX URLs remain available. Do not spend a
+    # request on that WAF-sensitive page by default. Discovery can be re-enabled
+    # explicitly for diagnostics, but production uses at most one deterministic
+    # XLSX request for the newest missing month.
+    if need_network and LME_INDEX_DISCOVERY_ENABLED:
+        discovered = _lme_discover_stock_links(diagnostics)
+    else:
+        discovered = {}
+        if need_network:
+            diagnostics.append({
+                "provider": "LME", "route": "stocks_summary_index",
+                "reason": "skipped_by_safe_fetch_policy",
+                "checkedAt": datetime.now(timezone.utc).isoformat(),
+            })
     discovery_ok = any(isinstance(d, dict) and d.get("route") == "stocks_summary_index" and d.get("reason") == "index_discovery_ok" for d in diagnostics)
     bootstrap_mode = len(existing_lme_dates) < MIN_PERCENTILE_OBS
 
@@ -495,12 +510,10 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
             continue
         stock_url = discovered_url or _lme_direct_url(y, m)
         stock_route = "lme_stocks_summary_discovered" if discovered_url else "lme_stocks_summary_deterministic_fallback"
-        for name, url in (
-            (stock_route, stock_url),
-            # Queue is retained only as a diagnostic route and is never accepted
-            # unless the workbook explicitly has stock-tonnage semantics.
-            ("lme_warehouse_queue", _lme_queue_direct_url(y, m)),
-        ):
+        # Stock Summary is the only monthly route used for inventory. The warehouse
+        # queue workbook is waiting-time data, not inventory tonnage, so production
+        # safe-fetch no longer requests it at all.
+        for name, url in ((stock_route, stock_url),):
             try:
                 rr = _request(url, timeout=30, max_attempts=LME_DOWNLOAD_MAX_ATTEMPTS)
                 tables = _tables(rr)
@@ -1077,19 +1090,21 @@ def run() -> dict[str, Any]:
     official_history_bootstrap = len(old_lme) < MIN_PERCENTILE_OBS
     cadence_due = _official_attempt_due(state)
     lme_monthly_cadence_due = _lme_monthly_attempt_due(state)
-    official_due = forced_env or cadence_due or parser_version_changed or official_history_bootstrap
-    lme_monthly_due = forced_env or parser_version_changed or official_history_bootstrap or lme_monthly_cadence_due
+    # A code/version deploy must not trigger a historical LME re-download. Once
+    # MIN_PERCENTILE_OBS official months are committed, history is immutable cache:
+    # routine runs inspect only the single newest completed month.
+    official_due = forced_env or cadence_due or official_history_bootstrap
+    lme_monthly_due = forced_env or official_history_bootstrap or lme_monthly_cadence_due
     official_attempt_reason = (
         'force_env' if forced_env else
-        'parser_version_changed' if parser_version_changed else
         'official_history_bootstrap' if official_history_bootstrap else
-        'cadence_due' if cadence_due else 'cooldown'
+        'cadence_due' if cadence_due else
+        'parser_version_changed_no_network' if parser_version_changed else 'cooldown'
     )
     if official_due:
-        # Once the LME parser is known-good, bootstrap enough official monthly
-        # observations for a same-source 13-week change and percentile. Four months
-        # are sufficient for routine refreshes, but not for MIN_PERCENTILE_OBS=12.
-        lme_months_back = 15 if official_history_bootstrap or parser_version_changed else 4
+        # Bootstrap can fetch history once. After 12+ official observations exist,
+        # never walk backwards through history again; request only the newest month.
+        lme_months_back = 15 if official_history_bootstrap else 1
         if lme_monthly_due:
             lme_rows, lme_errors = collect_lme_monthly(months_back=lme_months_back, diagnostics=lme_diagnostics, existing_history=old, force=forced_env)
             state['lastLmeMonthlyAttemptAt'] = datetime.now(timezone.utc).isoformat()
@@ -1116,6 +1131,13 @@ def run() -> dict[str, Any]:
             'lastOfficialAttemptAt':state.get('lastOfficialAttemptAt'),
             'checkedAt':datetime.now(timezone.utc).isoformat(),
         })
+
+    # Record deployed parser version even when safe-fetch intentionally performed no
+    # LME network call. Version changes are provenance, not a reason to re-download
+    # committed history.
+    if parser_version_changed and state.get('lastLmeParserVersion') != COLLECTOR_VERSION:
+        state['lastLmeParserVersion'] = COLLECTOR_VERSION
+        _write_state(state)
 
     new_groups: list[list[dict[str, Any]]] = [lme_rows, mirror_rows]
     if shfe_current:
@@ -1157,7 +1179,7 @@ def run() -> dict[str, Any]:
         "officialHistoryBootstrap": bool(official_history_bootstrap),
         "officialLmeHistoryBefore": len(old_lme),
         "officialLmeRowsCollected": len(lme_rows),
-        "lmeCollectionMode": "discovery_first_incremental_persistent_cache",
+        "lmeCollectionMode": "single_newest_month_persistent_cache_safe_fetch",
         "lmeMonthlyAttemptExecuted": bool(official_due and lme_monthly_due),
         "lmeMonthlyRetryHours": LME_DISCOVERY_RETRY_HOURS,
         "errors": errors[-10:],

@@ -101,7 +101,7 @@ assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
 assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
 
 # V3 collector identity and column-agnostic parser guard.
-assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_9_20260821"
+assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_10_20260821"
 fixture_generic = """
 <table><tbody>
 <tr><td>07. August 2026</td><td>14,240.00</td><td>14,092.00</td><td>222,975</td></tr>
@@ -143,6 +143,8 @@ orig_req=m._request
 orig_tables=m._tables
 orig_parser=m._lme_stocks_summary_total_from_table
 orig_discover=m._lme_discover_stock_links
+orig_discovery_enabled=m.LME_INDEX_DISCOVERY_ENABLED
+m.LME_INDEX_DISCOVERY_ENABLED=True
 called=[]
 m._lme_discover_stock_links=lambda diagnostics=None: {(2026,7):"https://www.lme.com/discovered-july.xlsx"}
 def _fake_req(url, timeout=25, max_attempts=1):
@@ -156,4 +158,31 @@ assert rows and rows[0]["totalTonnes"]==244025.0, rows
 assert called[0][0]=="https://www.lme.com/discovered-july.xlsx", called
 assert called[0][1]==m.LME_DOWNLOAD_MAX_ATTEMPTS, called
 m._request, m._tables, m._lme_stocks_summary_total_from_table, m._lme_discover_stock_links = orig_req, orig_tables, orig_parser, orig_discover
+m.LME_INDEX_DISCOVERY_ENABLED=orig_discovery_enabled
 print("official inventory tests ok · V4.8 discovery-first persistent cache")
+
+
+# V4.10 safe-fetch regression: with 12+ committed official months, a routine
+# monthly collection window is one month only and a committed newest month causes
+# zero LME network calls. Index discovery is disabled by default in production.
+assert m.LME_INDEX_DISCOVERY_ENABLED is False
+latest=m._month_end(m.date.today().year, m.date.today().month-1 if m.date.today().month>1 else 12)
+ly = m.date.today().year if m.date.today().month>1 else m.date.today().year-1
+lm = m.date.today().month-1 if m.date.today().month>1 else 12
+latest=m._month_end(ly,lm).isoformat()
+committed=[]
+y,mn=ly,lm
+for i in range(12):
+    committed.append({"date":m._month_end(y,mn).isoformat(),"basket":"lme","totalTonnes":100000+i,
+                      "components":{"lme":100000+i},"cadence":"monthly","source":"fixture"})
+    mn-=1
+    if mn==0:
+        y-=1; mn=12
+orig_req=m._request
+orig_discover=m._lme_discover_stock_links
+m._request=lambda *a,**k: (_ for _ in ()).throw(AssertionError("committed newest month must make zero LME requests"))
+m._lme_discover_stock_links=lambda *a,**k: (_ for _ in ()).throw(AssertionError("index discovery disabled in safe-fetch"))
+rows,errs=m.collect_lme_monthly(months_back=1, diagnostics=[], existing_history=committed, force=False)
+assert rows==[], rows
+m._request, m._lme_discover_stock_links = orig_req, orig_discover
+print("official inventory tests ok · V4.10 single-newest-month safe fetch")

@@ -18,7 +18,7 @@ UA = {
     "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language":"en-US,en;q=0.9"
 }
-ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_9_20260821"
+ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_10_20260821"
 SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
 INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V5_20260821"
 
@@ -1124,7 +1124,7 @@ def main():
     enrich_result=None
     try:
         import official_inventory_enricher as _inventory_enricher
-        expected_inventory_version = "COPPER_INVENTORY_EVIDENCE_V4_9_20260821"
+        expected_inventory_version = "COPPER_INVENTORY_EVIDENCE_V4_10_20260821"
         actual_inventory_version = getattr(_inventory_enricher, "COLLECTOR_VERSION", None)
         if actual_inventory_version != expected_inventory_version:
             raise RuntimeError(
