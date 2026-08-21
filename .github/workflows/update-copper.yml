@@ -65,6 +65,7 @@ jobs:
           python tests/official_inventory_test.py
           python tests/freshness_semantics_v4_test.py
           python tests/provider_diagnostics_v4_test.py
+          python tests/lme_parser_layouts_v4_test.py
           python tests/finalize_guard_test.py
 
       - name: Print four target indicators
