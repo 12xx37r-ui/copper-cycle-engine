@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T05:20:01.522281+00:00",
-  "generatedAt": "2026-08-21T05:19:49.531373+00:00",
+  "savedAt": "2026-08-21T05:20:38.204063+00:00",
+  "generatedAt": "2026-08-21T05:20:32.608588+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,13 +21,13 @@
     "officialObservationCount": 14,
     "inventoryDataAt": "2026-07-31",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 68.52467698639299,
-    "freeSupplyProxyTrendEquivalent": 11.114806191835793,
+    "freeSupplyProxyScore": 68.52942121419258,
+    "freeSupplyProxyTrendEquivalent": 11.117652728515548,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
     "chinaDemandProxyScore": 60.5339447181054,
     "curveSpreadPct": 1.191952642246208,
     "curveScore": 79.7988160561552,
-    "concentrateTightnessProxy": 16.07273813126499,
+    "concentrateTightnessProxy": 16.049016992267,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_8_20260821",
       "status": "CACHE",
@@ -47,11 +47,7 @@
         "lme": 244025.0
       },
       "errors": [
-        "2025-12 lme_stocks_summary_deterministic_fallback: HTTPError",
-        "2025-12 lme_warehouse_queue: queue sheet is not stock tonnage",
-        "SHFE parsed no copper total: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
-        "SHFE parsed no copper total: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
-        "CME/COMEX HTTPError",
+        "official exchange retry cadence not due; using committed history/current mirror",
         "LME mirror refresh cadence not due; using committed mirror history"
       ]
     },
@@ -61,341 +57,11 @@
       "lmeOfficialMonthly": [
         {
           "provider": "LME",
-          "route": "stocks_summary_index",
-          "statusCode": 403,
-          "exception": "HTTPError",
-          "reason": "authentication_or_waf_restriction",
-          "checkedAt": "2026-08-21T05:19:52.685738+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-07",
-          "dataAt": "2026-07-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 244025.0,
-          "checkedAt": "2026-08-21T05:19:52.991996+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-06",
-          "dataAt": "2026-06-30",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 324850.0,
-          "checkedAt": "2026-08-21T05:19:53.169162+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-05",
-          "dataAt": "2026-05-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 386050.0,
-          "checkedAt": "2026-08-21T05:19:53.410688+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-04",
-          "dataAt": "2026-04-30",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-april-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 398675.0,
-          "checkedAt": "2026-08-21T05:19:53.653379+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-03",
-          "dataAt": "2026-03-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-march-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 361925.0,
-          "checkedAt": "2026-08-21T05:19:53.859528+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-02",
-          "dataAt": "2026-02-28",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-february-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 257675.0,
-          "checkedAt": "2026-08-21T05:19:54.106386+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-01",
-          "dataAt": "2026-01-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-january-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 174675.0,
-          "checkedAt": "2026-08-21T05:19:54.428337+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-12",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-december-2025.xlsx",
-          "statusCode": 403,
-          "contentType": "text/html; charset=UTF-8",
-          "exception": "HTTPError",
-          "reason": "authentication_or_waf_restriction",
-          "checkedAt": "2026-08-21T05:19:55.086054+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_warehouse_queue",
-          "period": "2025-12",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-december-2025.xlsx",
-          "finalUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/warehouse-stocks-and-queue/warehouse-company-stocks-and-queue-data-december-2025.xlsx",
-          "statusCode": 200,
-          "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "contentLength": 21719,
-          "tableCount": 1,
-          "sheetNames": [
-            "warehouse company stocks and qu"
-          ],
-          "tableProbes": [
-            {
-              "sheet": "warehouse company stocks and qu",
-              "rows": 117,
-              "cols": 18,
-              "sample": [
-                [
-                  " ",
-                  null,
-                  "Key: / metal not listed",
-                  "Waiting time in days: December 2025",
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null
-                ],
-                [
-                  "Country/Region",
-                  "Location",
-                  "Warehouse Company",
-                  " Aluminium Alloy",
-                  "Copper",
-                  "Lead",
-                  "NASAAC",
-                  "Nickel",
-                  "Primary Aluminium",
-                  "Tin",
-                  "Zinc",
-                  "Cobalt"
-                ],
-                [
-                  "Belgium",
-                  "Antwerp",
-                  "C. Steinweg Belgium NV",
-                  0,
-                  0,
-                  0,
-                  "/",
-                  0,
-                  0,
-                  0,
-                  0,
-                  0
-                ],
-                [
-                  null,
-                  null,
-                  "CWT Commodity Logistics Rotterdam B.V.",
-                  0,
-                  0,
-                  0,
-                  "/",
-                  0,
-                  0,
-                  0,
-                  0,
-                  "/"
-                ],
-                [
-                  null,
-                  null,
-                  "Erus Metals Ltd",
-                  0,
-                  0,
-                  0,
-                  "/",
-                  0,
-                  0,
-                  0,
-                  0,
-                  "/"
-                ],
-                [
-                  null,
-                  null,
-                  "The Sumitomo Warehouse Co. Ltd",
-                  "/",
-                  "/",
-                  "/",
-                  "/",
-                  "/",
-                  0,
-                  "/",
-                  "/",
-                  "/"
-                ],
-                [
-                  null,
-                  null,
-                  "The Sumitomo Warehouse Co. Ltd",
-                  "/",
-                  "/",
-                  "/",
-                  "/",
-                  "/",
-                  0,
-                  "/",
-                  "/",
-                  "/"
-                ],
-                [
-                  null,
-                  null,
-                  "Grafton Warehouse Services (UK) Limited",
-                  0,
-                  0,
-                  0,
-                  "/",
-                  0,
-                  0,
-                  0,
-                  0,
-                  "/"
-                ],
-                [
-                  null,
-                  null,
-                  "Grafton Warehouse Services (UK) Limited",
-                  0,
-                  0,
-                  0,
-                  "/",
-                  0,
-                  0,
-                  0,
-                  0,
-                  "/"
-                ],
-                [
-                  null,
-                  "Owensboro",
-                  "Grafton Warehouse Services (US) LLC",
-                  "/",
-                  "/",
-                  "/",
-                  0,
-                  "/",
-                  0,
-                  "/",
-                  "/",
-                  "/"
-                ]
-              ]
-            }
-          ],
-          "reason": "not_inventory_tonnage_route",
-          "checkedAt": "2026-08-21T05:19:55.161723+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-11",
-          "dataAt": "2025-11-30",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-november-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 159425.0,
-          "checkedAt": "2026-08-21T05:19:55.368824+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-10",
-          "dataAt": "2025-10-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-october-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 133600.0,
-          "checkedAt": "2026-08-21T05:19:55.532447+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-09",
-          "dataAt": "2025-09-30",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-september-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 141725.0,
-          "checkedAt": "2026-08-21T05:19:55.819061+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-08",
-          "dataAt": "2025-08-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-august-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 158875.0,
-          "checkedAt": "2026-08-21T05:19:56.027761+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-07",
-          "dataAt": "2025-07-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 141750.0,
-          "checkedAt": "2026-08-21T05:19:56.191750+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-06",
-          "dataAt": "2025-06-30",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 91250.0,
-          "checkedAt": "2026-08-21T05:19:57.225576+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2025-05",
-          "dataAt": "2025-05-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2025.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 148450.0,
-          "checkedAt": "2026-08-21T05:19:57.424675+00:00"
+          "route": "official_monthly_gate",
+          "reason": "skipped_by_cooldown",
+          "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_8_20260821",
+          "lastOfficialAttemptAt": "2026-08-21T05:20:01.327321+00:00",
+          "checkedAt": "2026-08-21T05:20:37.785425+00:00"
         }
       ]
     }
@@ -424,6 +90,6 @@
     "reliability": 0.95,
     "fallback": null,
     "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "checkedAt": "2026-08-21T05:20:01.342771+00:00"
+    "checkedAt": "2026-08-21T05:20:37.849496+00:00"
   }
 }
