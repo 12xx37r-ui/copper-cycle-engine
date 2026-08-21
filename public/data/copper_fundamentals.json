@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
-  "modelVersion": "COPPER_ENGINE_V4_3_20260821",
-  "generatedAt": "2026-08-21T04:59:59.595735+00:00",
+  "modelVersion": "COPPER_ENGINE_V4_4_20260821",
+  "generatedAt": "2026-08-21T05:04:01.206686+00:00",
   "engine": "copper-cycle-engine",
   "price": {
     "priceUsdPerLb": 6.546000003814697,
@@ -1109,7 +1109,7 @@
       {
         "date": "2026-08-21",
         "close": 6.546000003814697,
-        "volume": 5551.0
+        "volume": 5569.0
       }
     ],
     "weeklyCandles": [
@@ -2011,7 +2011,7 @@
       {
         "date": "2026-08-17",
         "close": 6.546000003814697,
-        "volume": 7435.0
+        "volume": 7453.0
       }
     ],
     "source": "Yahoo Finance HG=F"
@@ -2029,12 +2029,12 @@
     "dataAt": {},
     "cadence": {},
     "lmeMonthlyHistory": null,
-    "visibleInventoryTonnes": 235975.0,
-    "inventoryChangePct13w": -40.01652262328419,
-    "inventoryScore": 76.64346481051817,
+    "visibleInventoryTonnes": 239925.0,
+    "inventoryChangePct13w": -38.96591198168405,
+    "inventoryScore": 78.05255023183926,
     "inventoryMode": "exchange_mirror_lme",
     "officialObservationCount": 0,
-    "inventoryDataAt": "2026-08-19",
+    "inventoryDataAt": "2026-08-20",
     "inventoryCadence": {},
     "freeSupplyProxyScore": 68.44397984445071,
     "freeSupplyProxyTrendEquivalent": 11.066387906670425,
@@ -2044,22 +2044,22 @@
     "curveScore": 79.7988160561552,
     "concentrateTightnessProxy": 16.47622384097636,
     "officialInventoryDerived": {
-      "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_20260821",
+      "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_4_20260821",
       "status": "FALLBACK",
       "basket": "lme_mirror",
       "evidenceClass": "exchange_mirror",
       "officialSourceAvailable": false,
-      "dataAt": "2026-08-19",
+      "dataAt": "2026-08-20",
       "cadence": "daily",
       "source": "Westmetall mirror of LME Copper stock",
       "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-      "observationCount": 1293,
-      "visibleInventoryPercentile": 76.64346481051817,
-      "inventoryChangePct13w": -40.01652262328419,
+      "observationCount": 1294,
+      "visibleInventoryPercentile": 78.05255023183926,
+      "inventoryChangePct13w": -38.96591198168405,
       "inventoryTrendScore13w": 100.0,
-      "prior91dDate": "2026-05-20",
+      "prior91dDate": "2026-05-21",
       "currentComponents": {
-        "lme": 235975.0
+        "lme": 239925.0
       },
       "errors": [
         "2026-07 lme_stocks_summary: parsed no copper total",
@@ -2072,11 +2072,10 @@
         "2026-04 lme_warehouse_queue: parsed no copper total",
         "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
         "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
-        "CME/COMEX HTTPError",
-        "LME mirror refresh cadence not due; using committed mirror history"
+        "CME/COMEX HTTPError"
       ]
     },
-    "inventoryObservationCount": 1293,
+    "inventoryObservationCount": 1294,
     "inventoryEvidenceClass": "exchange_mirror",
     "diagnostics": {
       "lmeOfficialMonthly": [
@@ -2090,8 +2089,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 57031,
           "tableCount": 1,
+          "sheetNames": [
+            "Closing Stock"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "Closing Stock",
+              "rows": 32,
+              "cols": 13,
+              "sample": [
+                [
+                  null,
+                  null,
+                  "LME Monthly Stock Report",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "LME Daily Closing Stock",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "BusinessDate",
+                  "AA",
+                  "AH",
+                  "CA",
+                  "CO",
+                  null,
+                  "NI",
+                  "PB",
+                  "SN",
+                  "ZS"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:05.724115+00:00"
+          "checkedAt": "2026-08-21T05:04:05.524781+00:00"
         },
         {
           "provider": "LME",
@@ -2103,8 +2212,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 20396,
           "tableCount": 1,
+          "sheetNames": [
+            "Sheet1"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "Sheet1",
+              "rows": 110,
+              "cols": 18,
+              "sample": [
+                [
+                  " ",
+                  null,
+                  "Key: / metal not listed",
+                  "Waiting time in days: July 2026",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  "Country/Region",
+                  "Location",
+                  "Warehouse Company",
+                  " Aluminium Alloy",
+                  "Copper",
+                  "Lead",
+                  "NASAAC",
+                  "Nickel",
+                  "Primary Aluminium",
+                  "Tin",
+                  "Zinc",
+                  "Cobalt"
+                ],
+                [
+                  "Belgium",
+                  "Antwerp",
+                  "C. Steinweg Belgium NV",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  null,
+                  null,
+                  "CWT Commodity Logistics Rotterdam B.V.",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Erus Metals Ltd",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:05.963908+00:00"
+          "checkedAt": "2026-08-21T05:04:05.625201+00:00"
         },
         {
           "provider": "LME",
@@ -2116,8 +2335,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 56968,
           "tableCount": 1,
+          "sheetNames": [
+            "Closing Stock"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "Closing Stock",
+              "rows": 31,
+              "cols": 13,
+              "sample": [
+                [
+                  null,
+                  null,
+                  "LME Monthly Stock Report",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "LME Daily Closing Stock",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "BusinessDate",
+                  "AA",
+                  "AH",
+                  "CA",
+                  "CO",
+                  null,
+                  "NI",
+                  "PB",
+                  "SN",
+                  "ZS"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:06.310915+00:00"
+          "checkedAt": "2026-08-21T05:04:05.809525+00:00"
         },
         {
           "provider": "LME",
@@ -2129,8 +2458,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 21652,
           "tableCount": 1,
+          "sheetNames": [
+            "warehouse company stocks and qu"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "warehouse company stocks and qu",
+              "rows": 110,
+              "cols": 18,
+              "sample": [
+                [
+                  " ",
+                  null,
+                  "Key: / metal not listed",
+                  "Waiting time in days: June 2026",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  "Country/Region",
+                  "Location",
+                  "Warehouse Company",
+                  " Aluminium Alloy",
+                  "Copper",
+                  "Lead",
+                  "NASAAC",
+                  "Nickel",
+                  "Primary Aluminium",
+                  "Tin",
+                  "Zinc",
+                  "Cobalt"
+                ],
+                [
+                  "Belgium",
+                  "Antwerp",
+                  "C. Steinweg Belgium NV",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  null,
+                  null,
+                  "CWT Commodity Logistics Rotterdam B.V.",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Erus Metals Ltd",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:06.478399+00:00"
+          "checkedAt": "2026-08-21T05:04:05.910510+00:00"
         },
         {
           "provider": "LME",
@@ -2142,8 +2581,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 56836,
           "tableCount": 1,
+          "sheetNames": [
+            "Closing Stock"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "Closing Stock",
+              "rows": 28,
+              "cols": 13,
+              "sample": [
+                [
+                  null,
+                  null,
+                  "LME Monthly Stock Report",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "LME Daily Closing Stock",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "BusinessDate",
+                  "AA",
+                  "AH",
+                  "CA",
+                  "CO",
+                  null,
+                  "NI",
+                  "PB",
+                  "SN",
+                  "ZS"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:06.750187+00:00"
+          "checkedAt": "2026-08-21T05:04:06.085207+00:00"
         },
         {
           "provider": "LME",
@@ -2155,8 +2704,132 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 22083,
           "tableCount": 1,
+          "sheetNames": [
+            "warehouse company stocks and qu"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "warehouse company stocks and qu",
+              "rows": 111,
+              "cols": 18,
+              "sample": [
+                [
+                  " ",
+                  null,
+                  "Key: / metal not listed",
+                  "Waiting time in days: May 2026",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  "Country/Region",
+                  "Location",
+                  "Warehouse Company",
+                  " Aluminium Alloy",
+                  "Copper",
+                  "Lead",
+                  "NASAAC",
+                  "Nickel",
+                  "Primary Aluminium",
+                  "Tin",
+                  "Zinc",
+                  "Cobalt"
+                ],
+                [
+                  "Belgium",
+                  "Antwerp",
+                  "C. Steinweg Belgium NV",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  null,
+                  null,
+                  "CWT Commodity Logistics Rotterdam B.V.",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Erus Metals Ltd",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Grafton Warehouse Services (UK) Limited",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:06.972157+00:00"
+          "checkedAt": "2026-08-21T05:04:06.188206+00:00"
         },
         {
           "provider": "LME",
@@ -2168,8 +2841,118 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 56878,
           "tableCount": 1,
+          "sheetNames": [
+            "Closing Stock"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "Closing Stock",
+              "rows": 29,
+              "cols": 13,
+              "sample": [
+                [
+                  null,
+                  null,
+                  "LME Monthly Stock Report",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "LME Daily Closing Stock",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  null,
+                  null,
+                  "BusinessDate",
+                  "AA",
+                  "AH",
+                  "CA",
+                  "CO",
+                  null,
+                  "NI",
+                  "PB",
+                  "SN",
+                  "ZS"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:07.234492+00:00"
+          "checkedAt": "2026-08-21T05:04:06.412471+00:00"
         },
         {
           "provider": "LME",
@@ -2181,8 +2964,146 @@
           "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "contentLength": 22014,
           "tableCount": 1,
+          "sheetNames": [
+            "warehouse company stocks and qu"
+          ],
+          "tableProbes": [
+            {
+              "sheet": "warehouse company stocks and qu",
+              "rows": 112,
+              "cols": 18,
+              "sample": [
+                [
+                  " ",
+                  null,
+                  "Key: / metal not listed",
+                  "Waiting time in days: April 2026",
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                [
+                  "Country/Region",
+                  "Location",
+                  "Warehouse Company",
+                  " Aluminium Alloy",
+                  "Copper",
+                  "Lead",
+                  "NASAAC",
+                  "Nickel",
+                  "Primary Aluminium",
+                  "Tin",
+                  "Zinc",
+                  "Cobalt"
+                ],
+                [
+                  "Belgium",
+                  "Antwerp",
+                  "C. Steinweg Belgium NV",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  null,
+                  null,
+                  "CWT Commodity Logistics Rotterdam B.V.",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Erus Metals Ltd",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "The Sumitomo Warehouse Co. Ltd",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  "/",
+                  0,
+                  "/",
+                  "/",
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Grafton Warehouse Services (UK) Limited",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ],
+                [
+                  null,
+                  null,
+                  "Grafton Warehouse Services (UK) Limited",
+                  0,
+                  0,
+                  0,
+                  "/",
+                  0,
+                  0,
+                  0,
+                  0,
+                  "/"
+                ]
+              ]
+            }
+          ],
           "reason": "parsed_no_copper_total",
-          "checkedAt": "2026-08-21T05:00:07.410526+00:00"
+          "checkedAt": "2026-08-21T05:04:06.557483+00:00"
         }
       ]
     }
@@ -2210,7 +3131,7 @@
     "source": "Yahoo Finance individual COMEX copper contracts",
     "status": "LIVE",
     "dataAt": "2026-08-20T04:00:00+00:00",
-    "checkedAt": "2026-08-21T05:00:04.233005+00:00",
+    "checkedAt": "2026-08-21T05:04:03.816795+00:00",
     "errors": []
   },
   "cot": {
@@ -2246,40 +3167,40 @@
   },
   "apiHealth": {
     "schemaVersion": "1.0",
-    "generatedAt": "2026-08-21T05:00:05.197347+00:00",
+    "generatedAt": "2026-08-21T05:04:04.158295+00:00",
     "sources": {
       "price": {
         "status": "LIVE",
         "source": "Yahoo Finance",
         "dataAt": "2026-08-21",
-        "ageSeconds": 18000.6,
+        "ageSeconds": 18241.7,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-21T05:00:00.617140+00:00"
+        "checkedAt": "2026-08-21T05:04:01.652423+00:00"
       },
       "curve": {
         "status": "LIVE",
         "source": "Yahoo Finance",
         "dataAt": "2026-08-20T04:00:00+00:00",
-        "ageSeconds": 90004.2,
+        "ageSeconds": 90243.8,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-21T05:00:04.233031+00:00"
+        "checkedAt": "2026-08-21T05:04:03.816819+00:00"
       },
       "cot": {
         "status": "CACHE",
         "source": "CFTC",
         "dataAt": "2026-08-11T00:00:00.000",
-        "ageSeconds": 882004.2,
+        "ageSeconds": 882243.8,
         "usedInCalculation": true,
         "reliability": 0.95,
         "fallback": null,
         "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
-        "checkedAt": "2026-08-21T05:00:04.233092+00:00"
+        "checkedAt": "2026-08-21T05:04:03.816881+00:00"
       },
       "inventory": {
         "status": "UNAVAILABLE",
@@ -2290,40 +3211,40 @@
         "reliability": 0.0,
         "fallback": "official exchange access remains blocked/unavailable; next retry cadence 6h",
         "url": null,
-        "checkedAt": "2026-08-21T05:00:04.233159+00:00"
+        "checkedAt": "2026-08-21T05:04:03.817040+00:00"
       },
       "china": {
         "status": "LIVE",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-21T04:59:59.595735+00:00",
-        "ageSeconds": 4.9,
+        "dataAt": "2026-08-21T05:04:01.206686+00:00",
+        "ageSeconds": 2.8,
         "usedInCalculation": true,
         "reliability": 1.0,
         "fallback": null,
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-21T05:00:04.472876+00:00"
+        "checkedAt": "2026-08-21T05:04:03.976284+00:00"
       },
       "concentrate": {
         "status": "LIVE",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-21T04:59:59.595735+00:00",
-        "ageSeconds": 5.1,
+        "dataAt": "2026-08-21T05:04:01.206686+00:00",
+        "ageSeconds": 3.0,
         "usedInCalculation": false,
         "reliability": 0.7,
         "fallback": "diagnostic-only; excluded from V3 score",
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-21T05:00:04.724612+00:00"
+        "checkedAt": "2026-08-21T05:04:04.157650+00:00"
       },
       "supply": {
-        "status": "LIVE",
+        "status": "CACHE",
         "source": "Google News RSS",
         "dataAt": "2026-08-21T04:59:59.595735+00:00",
-        "ageSeconds": 5.6,
+        "ageSeconds": 244.6,
         "usedInCalculation": true,
-        "reliability": 0.75,
-        "fallback": "event proxy; not verified disrupted tonnage",
+        "reliability": 0.7,
+        "fallback": "cached event proxy; not verified disrupted tonnage",
         "url": "https://news.google.com/",
-        "checkedAt": "2026-08-21T05:00:05.196796+00:00"
+        "checkedAt": "2026-08-21T05:04:04.157700+00:00"
       },
       "physical": {
         "status": "UNAVAILABLE",
@@ -2334,42 +3255,33 @@
         "reliability": 0.0,
         "fallback": "diagnostic free supply proxy exists but is not official inventory",
         "url": null,
-        "checkedAt": "2026-08-21T05:00:05.197324+00:00"
+        "checkedAt": "2026-08-21T05:04:04.158273+00:00"
       },
       "free_supply_proxy": {
         "status": "FALLBACK",
         "source": "Yahoo Finance",
-        "dataAt": "2026-08-21T04:59:59.595735+00:00",
-        "ageSeconds": 5.6,
+        "dataAt": "2026-08-21T05:04:01.206686+00:00",
+        "ageSeconds": 3.0,
         "usedInCalculation": false,
         "reliability": 0.7,
         "fallback": "COMEX curve + FXI China proxy + concentrate proxy",
         "url": "https://finance.yahoo.com/quote/HG=F/",
-        "checkedAt": "2026-08-21T05:00:05.197341+00:00"
+        "checkedAt": "2026-08-21T05:04:04.158289+00:00"
       },
       "official_inventory_derived": {
         "status": "FALLBACK",
         "source": "Westmetall mirror of LME Copper stock",
-        "dataAt": "2026-08-19",
+        "dataAt": "2026-08-20",
         "usedInCalculation": true,
         "reliability": 0.8,
         "fallback": "Official LME/SHFE/CME retrieval blocked; using explicitly-labelled LME stock mirror",
         "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-        "checkedAt": "2026-08-21T05:00:09.995778+00:00"
+        "checkedAt": "2026-08-21T05:04:11.258998+00:00"
       }
     },
     "providers": {
       "Yahoo Finance": {
         "network_calls": 21,
-        "deduplicated": 0,
-        "cache_uses": 0,
-        "retries": 0,
-        "http_429": 0,
-        "timeouts": 0,
-        "errors": 0
-      },
-      "Google News RSS": {
-        "network_calls": 1,
         "deduplicated": 0,
         "cache_uses": 0,
         "retries": 0,
@@ -2396,13 +3308,13 @@
     "Final publish guard prevents transient source/workflow failures from overwriting valid inventory/supply indicators; bounded LKG expires after 21d inventory / 72h supply."
   ],
   "officialIndicators": {
-    "officialVisibleInventoryPercentile": 76.64346481051817,
-    "officialInventoryChangePct13w": -40.01652262328419,
+    "officialVisibleInventoryPercentile": 78.05255023183926,
+    "officialInventoryChangePct13w": -38.96591198168405,
     "officialVisibleInventoryTrend13w": 100.0,
     "mineSupplyDisruption": 0,
     "inventoryBasket": "lme_mirror",
-    "inventoryDataAt": "2026-08-19",
-    "inventoryObservationCount": 1293,
+    "inventoryDataAt": "2026-08-20",
+    "inventoryObservationCount": 1294,
     "inventoryStatus": "ok",
     "inventoryEvidenceClass": "exchange_mirror",
     "officialSourceAvailable": false,
@@ -2419,17 +3331,17 @@
     "exchange": "LME",
     "provider": "Westmetall mirror of LME Copper stock",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
-    "currentTonnes": 235975.0,
-    "percentile": 76.64346481051817,
-    "changePct13w": -40.01652262328419,
+    "currentTonnes": 239925.0,
+    "percentile": 78.05255023183926,
+    "changePct13w": -38.96591198168405,
     "trendScore13w": 100.0,
-    "observationCount": 1293,
-    "dataAt": "2026-08-19",
-    "checkedAt": "2026-08-21T05:00:09.995760+00:00",
+    "observationCount": 1294,
+    "dataAt": "2026-08-20",
+    "checkedAt": "2026-08-21T05:04:11.258978+00:00",
     "officialDirectStatus": "UNAVAILABLE",
     "officialDirectSource": "LME/SHFE",
     "officialDirectReason": "official exchange access remains blocked/unavailable; next retry cadence 6h",
-    "officialDirectCheckedAt": "2026-08-21T05:00:04.233159+00:00",
+    "officialDirectCheckedAt": "2026-08-21T05:04:03.817040+00:00",
     "fallbackReason": "Official exchange machine access unavailable; using explicitly-labelled LME stock mirror"
   }
 }

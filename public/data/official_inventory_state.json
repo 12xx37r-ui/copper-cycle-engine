@@ -1,5 +1,5 @@
 {
-  "lastOfficialAttemptAt": "2026-08-21T05:00:09.980444+00:00",
+  "lastOfficialAttemptAt": "2026-08-21T05:04:11.243165+00:00",
   "lastOfficialErrors": [
     "2026-07 lme_stocks_summary: parsed no copper total",
     "2026-07 lme_warehouse_queue: parsed no copper total",
@@ -13,6 +13,6 @@
     "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
     "CME/COMEX HTTPError"
   ],
-  "lastMirrorAttemptAt": "2026-08-20T23:00:26.782908+00:00",
+  "lastMirrorAttemptAt": "2026-08-21T05:04:05.161691+00:00",
   "lastMirrorErrors": []
 }

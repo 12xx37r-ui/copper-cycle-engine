@@ -16807,5 +16807,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-08-20",
+    "components": {
+      "lme": 239925.0
+    },
+    "basket": "lme_mirror",
+    "totalTonnes": 239925.0,
+    "cadence": "daily",
+    "source": "Westmetall mirror of LME Copper stock",
+    "sourceClass": "exchange_mirror",
+    "officialUnderlying": "LME",
+    "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
   }
 ]
