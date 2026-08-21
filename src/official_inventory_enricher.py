@@ -5,6 +5,7 @@ import json
 import os
 import math
 import re
+import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -20,8 +21,11 @@ API_HEALTH_PATH = ROOT / "public/data/api_health.json"
 STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
+LME_DISCOVERY_RETRY_HOURS = 24
+LME_DOWNLOAD_RETRY_STATUSES = {429, 500, 502, 503, 504}
+LME_DOWNLOAD_MAX_ATTEMPTS = 3
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_7_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_8_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -58,15 +62,99 @@ def _month_end(y: int, m: int) -> date:
     return n - timedelta(days=1)
 
 
-def _request(url: str, timeout: int = 25) -> requests.Response:
+def _request(url: str, timeout: int = 25, *, max_attempts: int = 1) -> requests.Response:
+    """Low-impact HTTP request with bounded retry.
+
+    LME 401/403 responses are not hammered with repeated attempts. Retries are
+    reserved for transient 429/5xx/network failures, with short exponential
+    backoff. This keeps GitHub Actions polite and reduces WAF/rate-limit risk.
+    """
     h = dict(UA)
     if "lme.com" in url:
         h["Referer"] = LME_STOCKS_SUMMARY_PAGE
     elif "shfe.com.cn" in url:
         h["Referer"] = SHFE_WEEKLY_PAGE
-    r = requests.get(url, headers=h, timeout=timeout)
-    r.raise_for_status()
-    return r
+
+    attempts = max(1, int(max_attempts or 1))
+    last_exc = None
+    for attempt in range(1, attempts + 1):
+        try:
+            r = requests.get(url, headers=h, timeout=timeout)
+            # Do not repeatedly hit explicit auth/WAF denials.
+            if r.status_code in (401, 403):
+                r.raise_for_status()
+            if r.status_code in LME_DOWNLOAD_RETRY_STATUSES and attempt < attempts:
+                retry_after = r.headers.get("Retry-After")
+                try:
+                    wait = min(30.0, max(2.0, float(retry_after))) if retry_after else min(12.0, 2.0 ** attempt)
+                except Exception:
+                    wait = min(12.0, 2.0 ** attempt)
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return r
+        except requests.HTTPError as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            last_exc = e
+            if status in (401, 403) or status not in LME_DOWNLOAD_RETRY_STATUSES or attempt >= attempts:
+                raise
+        except (requests.Timeout, requests.ConnectionError) as e:
+            last_exc = e
+            if attempt >= attempts:
+                raise
+        if attempt < attempts:
+            time.sleep(min(12.0, 2.0 ** attempt))
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("request failed")
+
+
+def _lme_discover_stock_links(diagnostics: list[dict[str, Any]] | None = None) -> dict[tuple[int, int], str]:
+    """Discover official Stocks Summary XLSX links from the LME index page.
+
+    Discovery is preferred over guessing filenames. Deterministic URLs remain a
+    fallback for historical gaps or temporary index-page failures.
+    """
+    diagnostics = diagnostics if isinstance(diagnostics, list) else []
+    out: dict[tuple[int, int], str] = {}
+    try:
+        rr = _request(LME_STOCKS_SUMMARY_PAGE, timeout=30, max_attempts=2)
+        links = _extract_links(rr.text, str(getattr(rr, "url", LME_STOCKS_SUMMARY_PAGE)), r"stocks?.*summary|xlsx|excel|download")
+        # Also inspect hrefs even when visible anchor text is generic.
+        from urllib.parse import urljoin
+        for m in re.finditer(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', rr.text or "", re.I | re.S):
+            href = urljoin(str(getattr(rr, "url", LME_STOCKS_SUMMARY_PAGE)), m.group(1))
+            label = re.sub(r"<[^>]+>", " ", m.group(2))
+            if "stocks-summary" in href.lower() and re.search(r"\.xlsx?(?:$|[?#])", href, re.I):
+                links.append((label, href))
+        for label, href in links:
+            text = f"{label} {href}".lower()
+            mm = re.search(r"stocks[-_ ]?(january|february|march|april|may|june|july|august|september|october|november|december)[-_ ]?(20\d{2})", text, re.I)
+            if not mm:
+                mm = re.search(r"(january|february|march|april|may|june|july|august|september|october|november|december)[^0-9]{0,12}(20\d{2})", text, re.I)
+            if not mm:
+                continue
+            month_name, year_s = mm.group(1).lower(), mm.group(2)
+            try:
+                out[(int(year_s), MONTHS.index(month_name) + 1)] = href
+            except Exception:
+                continue
+        diagnostics.append({
+            "provider": "LME", "route": "stocks_summary_index",
+            "statusCode": getattr(rr, "status_code", None),
+            "finalUrl": str(getattr(rr, "url", LME_STOCKS_SUMMARY_PAGE)),
+            "discoveredCount": len(out), "reason": "index_discovery_ok",
+            "checkedAt": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception as e:
+        status = getattr(getattr(e, "response", None), "status_code", None)
+        diagnostics.append({
+            "provider": "LME", "route": "stocks_summary_index",
+            "statusCode": status, "exception": type(e).__name__,
+            "reason": ("authentication_or_waf_restriction" if status in (401,403) else "index_discovery_failed"),
+            "checkedAt": datetime.now(timezone.utc).isoformat(),
+        })
+    return out
 
 
 def _tables(resp: requests.Response) -> list[pd.DataFrame]:
@@ -344,7 +432,9 @@ def _lme_queue_direct_url(y: int, m: int) -> str:
     )
 
 
-def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
+def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]] | None = None,
+                        existing_history: list[dict[str, Any]] | None = None,
+                        force: bool = False) -> tuple[list[dict[str, Any]], list[str]]:
     """Collect official LME monthly copper closing stocks.
 
     Direct Stocks Summary XLSX is first choice. Warehouse/queue XLSX is a second
@@ -357,20 +447,65 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
     rows: list[dict[str, Any]] = []
     errors: list[str] = []
     diagnostics = diagnostics if isinstance(diagnostics, list) else []
+    existing_history = existing_history if isinstance(existing_history, list) else []
+    existing_lme_dates = {str(r.get("date")) for r in existing_history if isinstance(r, dict) and r.get("basket") == "lme" and r.get("date")}
+    # Fetch the index page only when at least one requested month is missing, or
+    # when manually forced. Already-committed official months are permanent cache.
+    requested = []
+    ty, tm = y, m
+    for _i in range(months_back):
+        requested.append((ty, tm, _month_end(ty, tm).isoformat()))
+        tm -= 1
+        if tm == 0:
+            ty, tm = ty - 1, 12
+    need_network = force or any(obs_date not in existing_lme_dates for _, _, obs_date in requested)
+    discovered = _lme_discover_stock_links(diagnostics) if need_network else {}
+    discovery_ok = any(isinstance(d, dict) and d.get("route") == "stocks_summary_index" and d.get("reason") == "index_discovery_ok" for d in diagnostics)
+    bootstrap_mode = len(existing_lme_dates) < MIN_PERCENTILE_OBS
 
     for _ in range(months_back):
+        obs_date = _month_end(y, m).isoformat()
+        if not force and obs_date in existing_lme_dates:
+            diagnostics.append({
+                "provider": "LME", "route": "persistent_history", "period": f"{y}-{m:02d}",
+                "dataAt": obs_date, "reason": "committed_official_history_reused",
+                "checkedAt": datetime.now(timezone.utc).isoformat(),
+            })
+            m -= 1
+            if m == 0:
+                y, m = y - 1, 12
+            continue
         found = None
         source_url = None
         route = None
+        discovered_url = discovered.get((y, m))
+        # If the index page loaded successfully but does not advertise a newly
+        # missing month, treat it as not published yet instead of probing a guessed
+        # URL every few hours. Deterministic URLs are retained for bootstrap/history
+        # recovery or when discovery itself is unavailable.
+        if not discovered_url and discovery_ok and not bootstrap_mode and not force:
+            errors.append(f"{y}-{m:02d} lme_stocks_summary: not published on official index")
+            diagnostics.append({
+                "provider":"LME", "route":"stocks_summary_index", "period":f"{y}-{m:02d}",
+                "reason":"official_month_not_published", "checkedAt":datetime.now(timezone.utc).isoformat(),
+            })
+            m -= 1
+            if m == 0:
+                y, m = y - 1, 12
+            continue
+        stock_url = discovered_url or _lme_direct_url(y, m)
+        stock_route = "lme_stocks_summary_discovered" if discovered_url else "lme_stocks_summary_deterministic_fallback"
         for name, url in (
-            ("lme_stocks_summary", _lme_direct_url(y, m)),
+            (stock_route, stock_url),
+            # Queue is retained only as a diagnostic route and is never accepted
+            # unless the workbook explicitly has stock-tonnage semantics.
             ("lme_warehouse_queue", _lme_queue_direct_url(y, m)),
         ):
             try:
-                rr = _request(url, timeout=30)
+                rr = _request(url, timeout=30, max_attempts=LME_DOWNLOAD_MAX_ATTEMPTS)
                 tables = _tables(rr)
                 for t in tables:
-                    if name == "lme_stocks_summary":
+                    if name.startswith("lme_stocks_summary"):
                         found = _lme_stocks_summary_total_from_table(t)
                     else:
                         # The warehouse/queue workbook often reports waiting time in
@@ -662,6 +797,21 @@ def _official_attempt_due(state: dict[str, Any]) -> bool:
     except Exception:
         return True
 
+def _lme_monthly_attempt_due(state: dict[str, Any]) -> bool:
+    if str(os.environ.get('COPPER_FORCE_OFFICIAL_INVENTORY','')).strip().lower() in {'1','true','yes','on'}:
+        return True
+    raw = state.get('lastLmeMonthlyAttemptAt')
+    if not raw:
+        return True
+    try:
+        dt = datetime.fromisoformat(str(raw).replace('Z','+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc)-dt.astimezone(timezone.utc)).total_seconds() >= LME_DISCOVERY_RETRY_HOURS*3600
+    except Exception:
+        return True
+
+
 def _mirror_attempt_due(state: dict[str, Any]) -> bool:
     raw=state.get('lastMirrorAttemptAt')
     if not raw:
@@ -926,7 +1076,9 @@ def run() -> dict[str, Any]:
     old_lme=[r for r in old if isinstance(r,dict) and r.get('basket')=='lme']
     official_history_bootstrap = len(old_lme) < MIN_PERCENTILE_OBS
     cadence_due = _official_attempt_due(state)
+    lme_monthly_cadence_due = _lme_monthly_attempt_due(state)
     official_due = forced_env or cadence_due or parser_version_changed or official_history_bootstrap
+    lme_monthly_due = forced_env or parser_version_changed or official_history_bootstrap or lme_monthly_cadence_due
     official_attempt_reason = (
         'force_env' if forced_env else
         'parser_version_changed' if parser_version_changed else
@@ -938,7 +1090,16 @@ def run() -> dict[str, Any]:
         # observations for a same-source 13-week change and percentile. Four months
         # are sufficient for routine refreshes, but not for MIN_PERCENTILE_OBS=12.
         lme_months_back = 15 if official_history_bootstrap or parser_version_changed else 4
-        lme_rows, lme_errors = collect_lme_monthly(months_back=lme_months_back, diagnostics=lme_diagnostics)
+        if lme_monthly_due:
+            lme_rows, lme_errors = collect_lme_monthly(months_back=lme_months_back, diagnostics=lme_diagnostics, existing_history=old, force=forced_env)
+            state['lastLmeMonthlyAttemptAt'] = datetime.now(timezone.utc).isoformat()
+        else:
+            lme_errors = ['LME official monthly refresh not due; using committed official history']
+            lme_diagnostics.append({
+                'provider':'LME', 'route':'official_monthly_gate', 'reason':'skipped_by_24h_lme_cadence',
+                'lastLmeMonthlyAttemptAt':state.get('lastLmeMonthlyAttemptAt'),
+                'checkedAt':datetime.now(timezone.utc).isoformat(),
+            })
         shfe_current, shfe_errors = collect_shfe_current()
         comex_current, comex_errors = collect_comex_current()
         state['lastOfficialAttemptAt']=datetime.now(timezone.utc).isoformat()
@@ -996,6 +1157,9 @@ def run() -> dict[str, Any]:
         "officialHistoryBootstrap": bool(official_history_bootstrap),
         "officialLmeHistoryBefore": len(old_lme),
         "officialLmeRowsCollected": len(lme_rows),
+        "lmeCollectionMode": "discovery_first_incremental_persistent_cache",
+        "lmeMonthlyAttemptExecuted": bool(official_due and lme_monthly_due),
+        "lmeMonthlyRetryHours": LME_DISCOVERY_RETRY_HOURS,
         "errors": errors[-10:],
         "lmeOfficialMonthlyDiagnostics": lme_diagnostics[-20:],
     }

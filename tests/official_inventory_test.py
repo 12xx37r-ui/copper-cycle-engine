@@ -101,7 +101,7 @@ assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
 assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
 
 # V3 collector identity and column-agnostic parser guard.
-assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_7_20260821"
+assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_8_20260821"
 fixture_generic = """
 <table><tbody>
 <tr><td>07. August 2026</td><td>14,240.00</td><td>14,092.00</td><td>222,975</td></tr>
@@ -114,7 +114,46 @@ assert g[-1]["date"] == "2026-08-07", g
 assert g[-1]["totalTonnes"] == 222975.0, g
 print("official inventory tests ok · V3 robust Westmetall parser")
 
-# V4.7 regression: manual force must bypass cooldown and bootstrap enough
+# V4.8 regression: manual force must bypass cooldown and bootstrap enough
 # official LME months to satisfy the 12-observation percentile floor.
 assert m.MIN_PERCENTILE_OBS == 12
-print("official inventory tests ok · V4.7 bootstrap semantics")
+print("official inventory tests ok · V4.8 bootstrap + safe incremental semantics")
+
+
+# V4.8: committed official months are persistent cache and must not hit LME again.
+existing=[]
+for mm in range(1,8):
+    existing.append({"date":m._month_end(2026,mm).isoformat(),"basket":"lme","totalTonnes":100000+mm,
+                     "components":{"lme":100000+mm},"cadence":"monthly","source":"fixture"})
+orig_discover=m._lme_discover_stock_links
+m._lme_discover_stock_links=lambda diagnostics=None: (_ for _ in ()).throw(AssertionError("network discovery should not run for committed months"))
+rows, errs=m.collect_lme_monthly(months_back=4, diagnostics=[], existing_history=existing, force=False)
+assert rows==[], rows
+m._lme_discover_stock_links=orig_discover
+
+# Discovery-first URL routing: when a month is missing, discovered official XLSX wins
+# over a guessed deterministic URL.
+class _Resp:
+    status_code=200
+    headers={"content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+    content=b"fixture"
+    url="https://www.lme.com/discovered-july.xlsx"
+
+orig_req=m._request
+orig_tables=m._tables
+orig_parser=m._lme_stocks_summary_total_from_table
+orig_discover=m._lme_discover_stock_links
+called=[]
+m._lme_discover_stock_links=lambda diagnostics=None: {(2026,7):"https://www.lme.com/discovered-july.xlsx"}
+def _fake_req(url, timeout=25, max_attempts=1):
+    called.append((url,max_attempts))
+    return _Resp()
+m._request=_fake_req
+m._tables=lambda resp:[m.pd.DataFrame([["BusinessDate","CA"],["2026-07-31",244025]])]
+m._lme_stocks_summary_total_from_table=lambda df:244025.0
+rows, errs=m.collect_lme_monthly(months_back=1, diagnostics=[], existing_history=[], force=False)
+assert rows and rows[0]["totalTonnes"]==244025.0, rows
+assert called[0][0]=="https://www.lme.com/discovered-july.xlsx", called
+assert called[0][1]==m.LME_DOWNLOAD_MAX_ATTEMPTS, called
+m._request, m._tables, m._lme_stocks_summary_total_from_table, m._lme_discover_stock_links = orig_req, orig_tables, orig_parser, orig_discover
+print("official inventory tests ok · V4.8 discovery-first persistent cache")
