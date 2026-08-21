@@ -12779,6 +12779,18 @@
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2025"
   },
   {
+    "date": "2025-05-31",
+    "components": {
+      "lme": 148450.0
+    },
+    "basket": "lme",
+    "totalTonnes": 148450.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2025.xlsx",
+    "route": "lme_stocks_summary"
+  },
+  {
     "date": "2025-06-02",
     "components": {
       "lme": 148450.0
@@ -13037,6 +13049,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2025"
+  },
+  {
+    "date": "2025-06-30",
+    "components": {
+      "lme": 91250.0
+    },
+    "basket": "lme",
+    "totalTonnes": 91250.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2025.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2025-06-30",
@@ -13340,6 +13364,18 @@
   {
     "date": "2025-07-31",
     "components": {
+      "lme": 141750.0
+    },
+    "basket": "lme",
+    "totalTonnes": 141750.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2025.xlsx",
+    "route": "lme_stocks_summary"
+  },
+  {
+    "date": "2025-07-31",
+    "components": {
       "lme": 138200.0
     },
     "basket": "lme_mirror",
@@ -13609,6 +13645,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2025"
+  },
+  {
+    "date": "2025-08-31",
+    "components": {
+      "lme": 158875.0
+    },
+    "basket": "lme",
+    "totalTonnes": 158875.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-august-2025.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2025-09-01",
@@ -13882,6 +13930,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2025"
+  },
+  {
+    "date": "2025-09-30",
+    "components": {
+      "lme": 141725.0
+    },
+    "basket": "lme",
+    "totalTonnes": 141725.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-september-2025.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2025-09-30",
@@ -14185,6 +14245,18 @@
   {
     "date": "2025-10-31",
     "components": {
+      "lme": 133600.0
+    },
+    "basket": "lme",
+    "totalTonnes": 133600.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-october-2025.xlsx",
+    "route": "lme_stocks_summary"
+  },
+  {
+    "date": "2025-10-31",
+    "components": {
       "lme": 134625.0
     },
     "basket": "lme_mirror",
@@ -14454,6 +14526,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2025"
+  },
+  {
+    "date": "2025-11-30",
+    "components": {
+      "lme": 159425.0
+    },
+    "basket": "lme",
+    "totalTonnes": 159425.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-november-2025.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2025-12-01",
@@ -15002,6 +15086,18 @@
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
   },
   {
+    "date": "2026-01-31",
+    "components": {
+      "lme": 174675.0
+    },
+    "basket": "lme",
+    "totalTonnes": 174675.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-january-2026.xlsx",
+    "route": "lme_stocks_summary"
+  },
+  {
     "date": "2026-02-02",
     "components": {
       "lme": 174675.0
@@ -15260,6 +15356,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-02-28",
+    "components": {
+      "lme": 257675.0
+    },
+    "basket": "lme",
+    "totalTonnes": 257675.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-february-2026.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2026-03-02",
@@ -15533,6 +15641,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-03-31",
+    "components": {
+      "lme": 361925.0
+    },
+    "basket": "lme",
+    "totalTonnes": 361925.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-march-2026.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2026-03-31",
