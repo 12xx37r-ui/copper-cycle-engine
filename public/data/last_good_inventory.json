@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T05:29:42.685515+00:00",
-  "generatedAt": "2026-08-21T05:29:35.005745+00:00",
+  "savedAt": "2026-08-21T07:56:25.130256+00:00",
+  "generatedAt": "2026-08-21T07:56:21.157029+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,13 +21,13 @@
     "officialObservationCount": 14,
     "inventoryDataAt": "2026-07-31",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 68.51043524912437,
-    "freeSupplyProxyTrendEquivalent": 11.106261149474621,
+    "freeSupplyProxyScore": 68.35378971997434,
+    "freeSupplyProxyTrendEquivalent": 11.012273831984606,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
     "chinaDemandProxyScore": 60.5339447181054,
     "curveSpreadPct": 1.191952642246208,
     "curveScore": 79.7988160561552,
-    "concentrateTightnessProxy": 16.143946817608068,
+    "concentrateTightnessProxy": 16.927174463358185,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
       "status": "CACHE",
@@ -47,9 +47,7 @@
         "lme": 244025.0
       },
       "errors": [
-        "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
-        "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
-        "CME/COMEX HTTPError",
+        "official exchange retry cadence not due; using committed history/current mirror",
         "LME mirror refresh cadence not due; using committed mirror history"
       ]
     },
@@ -59,20 +57,11 @@
       "lmeOfficialMonthly": [
         {
           "provider": "LME",
-          "route": "stocks_summary_index",
-          "reason": "skipped_by_safe_fetch_policy",
-          "checkedAt": "2026-08-21T05:29:37.835232+00:00"
-        },
-        {
-          "provider": "LME",
-          "route": "lme_stocks_summary_deterministic_fallback",
-          "period": "2026-07",
-          "dataAt": "2026-07-31",
-          "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-          "statusCode": 200,
-          "reason": "parsed_copper_total",
-          "copperTotalTonnes": 244025.0,
-          "checkedAt": "2026-08-21T05:29:38.148207+00:00"
+          "route": "official_monthly_gate",
+          "reason": "skipped_by_cooldown",
+          "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
+          "lastOfficialAttemptAt": "2026-08-21T05:29:42.507432+00:00",
+          "checkedAt": "2026-08-21T07:56:24.992055+00:00"
         }
       ]
     }
@@ -101,6 +90,6 @@
     "reliability": 0.95,
     "fallback": null,
     "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "checkedAt": "2026-08-21T05:29:42.522133+00:00"
+    "checkedAt": "2026-08-21T07:56:25.006992+00:00"
   }
 }
