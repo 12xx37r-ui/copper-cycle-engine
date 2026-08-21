@@ -181,7 +181,7 @@ def _lme_queue_direct_url(y: int, m: int) -> str:
     )
 
 
-def collect_lme_monthly(months_back: int = 60) -> tuple[list[dict[str, Any]], list[str]]:
+def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
     """Collect official LME monthly copper closing stocks.
 
     Direct Stocks Summary XLSX is first choice. Warehouse/queue XLSX is a second
@@ -193,6 +193,7 @@ def collect_lme_monthly(months_back: int = 60) -> tuple[list[dict[str, Any]], li
         y, m = y - 1, 12
     rows: list[dict[str, Any]] = []
     errors: list[str] = []
+    diagnostics = diagnostics if isinstance(diagnostics, list) else []
 
     for _ in range(months_back):
         found = None
@@ -204,7 +205,8 @@ def collect_lme_monthly(months_back: int = 60) -> tuple[list[dict[str, Any]], li
         ):
             try:
                 rr = _request(url, timeout=30)
-                for t in _tables(rr):
+                tables = _tables(rr)
+                for t in tables:
                     found = _copper_total_from_table(t)
                     if found is not None:
                         break
@@ -212,8 +214,34 @@ def collect_lme_monthly(months_back: int = 60) -> tuple[list[dict[str, Any]], li
                     source_url, route = url, name
                     break
                 errors.append(f"{y}-{m:02d} {name}: parsed no copper total")
+                diagnostics.append({
+                    "provider": "LME",
+                    "route": name,
+                    "period": f"{y}-{m:02d}",
+                    "url": url,
+                    "finalUrl": str(getattr(rr, "url", url)),
+                    "statusCode": getattr(rr, "status_code", None),
+                    "contentType": (rr.headers.get("content-type") if getattr(rr, "headers", None) else None),
+                    "contentLength": len(getattr(rr, "content", b"") or b""),
+                    "tableCount": len(tables),
+                    "reason": "parsed_no_copper_total",
+                    "checkedAt": datetime.now(timezone.utc).isoformat(),
+                })
             except Exception as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                headers = getattr(getattr(e, "response", None), "headers", {}) or {}
                 errors.append(f"{y}-{m:02d} {name}: {type(e).__name__}")
+                diagnostics.append({
+                    "provider": "LME",
+                    "route": name,
+                    "period": f"{y}-{m:02d}",
+                    "url": url,
+                    "statusCode": status,
+                    "contentType": headers.get("content-type"),
+                    "exception": type(e).__name__,
+                    "reason": ("authentication_or_waf_restriction" if status in (401,403) else "rate_limited" if status == 429 else "http_error" if status else "request_error"),
+                    "checkedAt": datetime.now(timezone.utc).isoformat(),
+                })
 
         if found is not None:
             rows.append({
@@ -706,12 +734,12 @@ def run() -> dict[str, Any]:
     else:
         mirror_errors=['LME mirror refresh cadence not due; using committed mirror history']
 
-    lme_rows=[]; lme_errors=[]; shfe_current=None; shfe_errors=[]; comex_current=None; comex_errors=[]
+    lme_rows=[]; lme_errors=[]; lme_diagnostics=[]; shfe_current=None; shfe_errors=[]; comex_current=None; comex_errors=[]
     if _official_attempt_due(state):
         # Keep probing true exchange sources, but do not hammer dozens of blocked
         # historical URLs every 30-minute market run. The mirror supplies history;
         # official routes are retried on a six-hour cadence.
-        lme_rows, lme_errors = collect_lme_monthly(months_back=4)
+        lme_rows, lme_errors = collect_lme_monthly(months_back=4, diagnostics=lme_diagnostics)
         shfe_current, shfe_errors = collect_shfe_current()
         comex_current, comex_errors = collect_comex_current()
         state['lastOfficialAttemptAt']=datetime.now(timezone.utc).isoformat()
@@ -731,6 +759,9 @@ def run() -> dict[str, Any]:
     metrics = choose_primary_metrics(history)
     errors = lme_errors + shfe_errors + comex_errors + mirror_errors
     payload = apply_to_payload(payload, metrics, errors)
+    physical = payload.setdefault("physical", {})
+    diagnostics = physical.setdefault("diagnostics", {})
+    diagnostics["lmeOfficialMonthly"] = lme_diagnostics
     # Record the actual enrichment check time so the health panel can distinguish
     # a fresh mirror observation from a stale one.
     h=((payload.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived')
@@ -753,6 +784,7 @@ def run() -> dict[str, Any]:
         "inventorySource": metrics.get("source"),
         "officialRetryDue": _official_attempt_due(state),
         "errors": errors[-10:],
+        "lmeOfficialMonthlyDiagnostics": lme_diagnostics[-20:],
     }
     print(json.dumps(result, ensure_ascii=False))
     return result
