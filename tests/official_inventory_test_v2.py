@@ -99,3 +99,11 @@ assert pp["officialIndicators"]["inventoryEvidenceClass"]=="exchange_mirror", pp
 assert pp["officialIndicators"]["officialSourceAvailable"] is False, pp
 assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
 assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
+
+# Canonical inventory evidence makes the usable mirror state explicit instead of
+# forcing downstream consumers to reconcile a blocked official-direct route.
+assert pp['inventoryEvidence']['usable'] is True, pp['inventoryEvidence']
+assert pp['inventoryEvidence']['status']=='FALLBACK', pp['inventoryEvidence']
+assert pp['inventoryEvidence']['evidenceClass']=='exchange_mirror', pp['inventoryEvidence']
+assert pp['inventoryEvidence']['officialDirectStatus']=='UNAVAILABLE', pp['inventoryEvidence']
+print('canonical inventory evidence tests ok')

@@ -18,9 +18,9 @@ UA = {
     "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language":"en-US,en;q=0.9"
 }
-ENGINE_MODEL_VERSION = "COPPER_ENGINE_V3_20260819"
+ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_20260821"
 SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
-INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V4_20260819"
+INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V5_20260821"
 
 API_HEALTH = ROOT / "public/data/api_health.json"
 try:
@@ -241,26 +241,106 @@ def _contract_month_index(symbol):
     month_map={'F':1,'G':2,'H':3,'J':4,'K':5,'M':6,'N':7,'Q':8,'U':9,'V':10,'X':11,'Z':12}
     return (2000+int(m.group(2)))*100+month_map[m.group(1)]
 
-def futures_curve():
-    codes="FGHJKMNQUVXZ"; now=datetime.now(timezone.utc); current_key=now.year*100+now.month; candidates=[]
-    for y in (now.year,now.year+1):
-      for code in codes:
-        sym=contract_symbol(code,y); key=_contract_month_index(sym)
-        if key is None or key<current_key: continue
+def _yf_contract_snapshot(symbol: str, period: str = "10d") -> tuple[dict[str, Any] | None, str | None]:
+    """Fetch one COMEX contract with the same retry/throttle/health accounting as other Yahoo routes.
+
+    Returns (snapshot, error).  The snapshot carries the provider observation date,
+    which is deliberately distinct from the engine check/generation time.
+    """
+    last_exc = None
+    for attempt in range(3):
         try:
-          h=yf.Ticker(sym).history(period="10d",interval="1d",auto_adjust=False)
-          if h is None or h.empty: continue
-          row=h.iloc[-1]; price=num(row.get("Close")); vol=num(row.get("Volume")) or 0
-          if price and price>0:candidates.append({"symbol":sym,"contractMonth":key,"price":price,"volume":vol})
-        except Exception: pass
-    candidates.sort(key=lambda x:x["contractMonth"])
-    liquid=[x for x in candidates if x["volume"]>0] or candidates
-    if len(liquid)<2:return {"status":"unavailable","source":"Yahoo individual COMEX contracts"}
-    near=liquid[0]; far=liquid[min(3,len(liquid)-1)]
-    spread=(far["price"]/near["price"]-1)*100; score=clamp(50+spread*25)
-    return {"near":near,"far":far,"curveSpreadPct":spread,"curveScore":score,
-            "structure":"contango" if spread>0.15 else "backwardation" if spread<-0.15 else "flat",
-            "source":"Yahoo Finance individual COMEX copper contracts"}
+            RUNTIME._throttle('Yahoo Finance')
+            RUNTIME._stat('Yahoo Finance')['network_calls'] += 1
+            h = yf.Ticker(symbol).history(period=period, interval="1d", auto_adjust=False)
+            if h is None or h.empty:
+                raise RuntimeError('empty Yahoo contract history')
+            row = h.iloc[-1]
+            price = num(row.get("Close"))
+            if price is None or price <= 0:
+                raise RuntimeError('invalid Yahoo contract close')
+            vol = num(row.get("Volume")) or 0
+            idx = h.index[-1]
+            try:
+                data_at = idx.to_pydatetime()
+                if data_at.tzinfo is None:
+                    data_at = data_at.replace(tzinfo=timezone.utc)
+                else:
+                    data_at = data_at.astimezone(timezone.utc)
+                data_at = data_at.isoformat()
+            except Exception:
+                data_at = str(getattr(idx, 'date', lambda: idx)())
+            return {"symbol": symbol, "price": price, "volume": vol, "dataAt": data_at}, None
+        except Exception as e:
+            last_exc = e
+            if attempt < 2:
+                RUNTIME._stat('Yahoo Finance')['retries'] += 1
+                time.sleep(0.6 * (2 ** attempt) + random.uniform(.05, .25))
+    RUNTIME._stat('Yahoo Finance')['errors'] += 1
+    return None, f"{type(last_exc).__name__}: {last_exc}" if last_exc else 'unknown Yahoo error'
+
+
+def _month_distance(a: int, b: int) -> int:
+    ay, am = divmod(int(a), 100); by, bm = divmod(int(b), 100)
+    return (by - ay) * 12 + (bm - am)
+
+
+def futures_curve():
+    codes = "FGHJKMNQUVXZ"
+    now = datetime.now(timezone.utc)
+    current_key = now.year * 100 + now.month
+    candidates = []
+    errors = []
+    for y in (now.year, now.year + 1):
+        for code in codes:
+            sym = contract_symbol(code, y)
+            key = _contract_month_index(sym)
+            if key is None or key < current_key:
+                continue
+            snap, err = _yf_contract_snapshot(sym)
+            if snap is None:
+                errors.append({"symbol": sym, "error": err})
+                continue
+            snap["contractMonth"] = key
+            candidates.append(snap)
+
+    candidates.sort(key=lambda x: x["contractMonth"])
+    liquid = [x for x in candidates if x["volume"] > 0] or candidates
+    if len(liquid) < 2:
+        return {
+            "status": "UNAVAILABLE",
+            "source": "Yahoo Finance individual COMEX copper contracts",
+            "errors": errors[-8:],
+            "checkedAt": iso_now(),
+        }
+
+    near = liquid[0]
+    # Use a stable ~3-month tenor rather than an array position that can change
+    # when one intermediate contract has zero volume or temporarily disappears.
+    target_months = 3
+    farther = liquid[1:]
+    far = min(farther, key=lambda x: (abs(_month_distance(near["contractMonth"], x["contractMonth"]) - target_months), x["contractMonth"]))
+    tenor_months = _month_distance(near["contractMonth"], far["contractMonth"])
+    spread = (far["price"] / near["price"] - 1) * 100
+    score = clamp(50 + spread * 25)
+    # The spread is only as fresh as its older leg.
+    observed = [parse_dt(near.get("dataAt")), parse_dt(far.get("dataAt"))]
+    observed = [x for x in observed if x is not None]
+    data_at = min(observed).isoformat() if observed else None
+    return {
+        "near": near,
+        "far": far,
+        "tenorMonths": tenor_months,
+        "targetTenorMonths": target_months,
+        "curveSpreadPct": spread,
+        "curveScore": score,
+        "structure": "contango" if spread > 0.15 else "backwardation" if spread < -0.15 else "flat",
+        "source": "Yahoo Finance individual COMEX copper contracts",
+        "status": "LIVE",
+        "dataAt": data_at,
+        "checkedAt": iso_now(),
+        "errors": errors[-8:],
+    }
 
 def cftc_cot():
     select='report_date_as_yyyy_mm_dd,market_and_exchange_names,commodity_name,open_interest_all,m_money_positions_long_all,m_money_positions_short_all'
@@ -458,6 +538,28 @@ def _merge_official_backfill(history_rows, backfill_rows):
         by_date[str(row['date'])]=merged
     return [by_date[k] for k in sorted(by_date)]
 
+def StringStatus_(v: Any) -> str:
+    return str(v or '').strip()
+
+
+def _request_error_detail(exc: Exception, route: str, url: str) -> str:
+    """Compact, actionable diagnostics without persisting response bodies/cookies."""
+    status = None
+    response = getattr(exc, 'response', None)
+    if response is not None:
+        status = getattr(response, 'status_code', None)
+    kind = type(exc).__name__
+    parts = [route, kind]
+    if status is not None:
+        parts.append(f"HTTP {status}")
+        if status in (401, 403):
+            parts.append('authentication/WAF access restriction likely')
+        elif status == 429:
+            parts.append('rate limited')
+    parts.append(url)
+    return ' · '.join(parts)
+
+
 def inventory_sources():
     out={
       "lmeInventoryTonnes":None,"shfeInventoryTonnes":None,
@@ -494,7 +596,7 @@ def inventory_sources():
           except Exception:
             pass
     except Exception as e:
-      out['statuses']['lme_daily']=f'daily route failed: {type(e).__name__}'
+      out['statuses']['lme_daily']=_request_error_detail(e, 'LME daily warehouse route', lme_url)
 
     # 2) Official public LME monthly Stocks Summary fallback.
     # This is still official inventory; it is just lower cadence than the daily report.
@@ -508,7 +610,7 @@ def inventory_sources():
         out['cadence']['lme']='monthly'
         out['lmeMonthlyHistory']=monthly
       else:
-        out['statuses']['lme']='official daily and monthly LME stock routes unavailable'
+        out['statuses']['lme']='official daily and monthly LME stock routes unavailable · '+StringStatus_(out['statuses'].get('lme_daily'))
 
     # 3) SHFE official weekly inventory.
     for url in [
@@ -861,7 +963,10 @@ def main():
     curve=futures_curve()
     if curve.get('curveSpreadPct') is None:
         curve=lkg_or_unavailable('curve','Yahoo Finance',max_age_h=8) or curve
-    else: RUNTIME.mark('curve','LIVE','Yahoo Finance',data_at=now.isoformat())
+    else:
+        RUNTIME.mark('curve','LIVE','Yahoo Finance',data_at=curve.get('dataAt'),ttl_s=48*3600)
+        # Keep collection/check timestamps in the metric payload as well as apiHealth.
+        curve['checkedAt']=curve.get('checkedAt') or iso_now()
 
     # Weekly/daily publications are not hammered every 30-minute market workflow.
     if is_due('cot',12):

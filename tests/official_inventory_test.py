@@ -101,7 +101,7 @@ assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
 assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
 
 # V3 collector identity and column-agnostic parser guard.
-assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V3_20260819"
+assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_20260821"
 fixture_generic = """
 <table><tbody>
 <tr><td>07. August 2026</td><td>14,240.00</td><td>14,092.00</td><td>222,975</td></tr>

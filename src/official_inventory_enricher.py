@@ -20,7 +20,7 @@ STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V3_20260819"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -622,6 +622,37 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
         "inventorySourceUrl": metrics.get("sourceUrl"),
         "supplySource": (payload.get("supply") or {}).get("source"),
         "supplyEventCount": (payload.get("supply") or {}).get("eventCount"),
+    }
+
+    # Canonical consumer-facing inventory evidence.  Downstream dashboards should
+    # read this object instead of reconciling base `inventory`, derived health and
+    # mirror fields independently.  It explicitly separates the usable evidence
+    # from the health of the blocked official-direct route.
+    base_health = ((payload.get("apiHealth") or {}).get("sources") or {}).get("inventory") or {}
+    canonical_status = (
+        "UNAVAILABLE" if metrics.get("currentValue") is None else
+        "FALLBACK" if metrics.get("basket") == "lme_mirror" else
+        "CACHE" if metrics.get("cadence") in {"monthly", "weekly"} else "LIVE"
+    )
+    payload["inventoryEvidence"] = {
+        "usable": bool(metrics.get("currentValue") is not None and metrics.get("changePct13w") is not None and metrics.get("percentile") is not None),
+        "status": canonical_status,
+        "evidenceClass": evidence_class,
+        "basket": metrics.get("basket"),
+        "exchange": "LME" if metrics.get("basket") in {"lme", "lme_mirror"} else metrics.get("basket"),
+        "provider": metrics.get("source"),
+        "sourceUrl": metrics.get("sourceUrl"),
+        "currentTonnes": metrics.get("currentValue"),
+        "percentile": metrics.get("percentile"),
+        "changePct13w": metrics.get("changePct13w"),
+        "trendScore13w": metrics.get("trendScore13w"),
+        "observationCount": metrics.get("observationCount", 0),
+        "dataAt": metrics.get("dataAt"),
+        "checkedAt": datetime.now(timezone.utc).isoformat(),
+        "officialDirectStatus": base_health.get("status") or "UNAVAILABLE",
+        "officialDirectSource": base_health.get("source") or "LME/SHFE",
+        "officialDirectReason": base_health.get("fallback"),
+        "fallbackReason": ("Official exchange machine access unavailable; using explicitly-labelled LME stock mirror" if metrics.get("basket") == "lme_mirror" else None),
     }
 
     health = payload.setdefault("apiHealth", {}).setdefault("sources", {})

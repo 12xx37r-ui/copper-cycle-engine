@@ -36,3 +36,35 @@ with tempfile.TemporaryDirectory() as td:
     assert total==162000 and chg is not None and n>=10
 m.HISTORY=old_hist
 print('4 passed')
+
+# COMEX curve uses retry-aware contract snapshots, carries provider observation
+# time separately from checkedAt, and targets an approximately 3-month tenor.
+orig_snap=m._yf_contract_snapshot
+orig_dt=m.datetime
+class FixedDatetime(m.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return cls(2026,8,21,tzinfo=tz)
+m.datetime=FixedDatetime
+prices={
+    'HGQ26.CMX':(6.40,10,'2026-08-20T00:00:00+00:00'),
+    'HGU26.CMX':(6.42,100,'2026-08-20T00:00:00+00:00'),
+    'HGV26.CMX':(6.44,200,'2026-08-20T00:00:00+00:00'),
+    'HGX26.CMX':(6.48,500,'2026-08-20T00:00:00+00:00'),
+    'HGZ26.CMX':(6.50,600,'2026-08-20T00:00:00+00:00'),
+}
+def fake_snap(sym,period='10d'):
+    if sym not in prices:return None,'fixture unavailable'
+    px,vol,at=prices[sym]
+    return {'symbol':sym,'price':px,'volume':vol,'dataAt':at},None
+m._yf_contract_snapshot=fake_snap
+cv=m.futures_curve()
+assert cv['status']=='LIVE',cv
+assert cv['near']['symbol']=='HGQ26.CMX',cv
+assert cv['far']['symbol']=='HGX26.CMX',cv
+assert cv['tenorMonths']==3,cv
+assert cv['dataAt']=='2026-08-20T00:00:00+00:00',cv
+assert cv['checkedAt'] != cv['dataAt'],cv
+m._yf_contract_snapshot=orig_snap
+m.datetime=orig_dt
+print('curve health tests ok')
