@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T13:59:21.633874+00:00",
-  "generatedAt": "2026-08-21T13:59:10.395260+00:00",
+  "savedAt": "2026-08-21T15:19:35.786557+00:00",
+  "generatedAt": "2026-08-21T15:19:30.377745+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,13 +21,13 @@
     "officialObservationCount": 14,
     "inventoryDataAt": "2026-07-31",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 81.43435808731222,
-    "freeSupplyProxyTrendEquivalent": 18.860614852387332,
+    "freeSupplyProxyScore": 81.1015401415371,
+    "freeSupplyProxyTrendEquivalent": 18.66092408492226,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 61.885473042292595,
-    "curveSpreadPct": 3.4597488175398095,
+    "chinaDemandProxyScore": 61.66857144117888,
+    "curveSpreadPct": 2.708981264728627,
     "curveScore": 100,
-    "concentrateTightnessProxy": 0,
+    "concentrateTightnessProxy": 1.9894421305461876,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
       "status": "CACHE",
@@ -47,10 +47,8 @@
         "lme": 244025.0
       },
       "errors": [
-        "LME official monthly refresh not due; using committed official history",
-        "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
-        "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
-        "CME/COMEX HTTPError"
+        "official exchange retry cadence not due; using committed history/current mirror",
+        "LME mirror refresh cadence not due; using committed mirror history"
       ]
     },
     "inventoryObservationCount": 14,
@@ -60,9 +58,10 @@
         {
           "provider": "LME",
           "route": "official_monthly_gate",
-          "reason": "skipped_by_24h_lme_cadence",
-          "lastLmeMonthlyAttemptAt": "2026-08-21T05:29:38.148467+00:00",
-          "checkedAt": "2026-08-21T13:59:16.461498+00:00"
+          "reason": "skipped_by_cooldown",
+          "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
+          "lastOfficialAttemptAt": "2026-08-21T13:59:21.466222+00:00",
+          "checkedAt": "2026-08-21T15:19:35.672905+00:00"
         }
       ]
     }
@@ -91,6 +90,6 @@
     "reliability": 0.95,
     "fallback": null,
     "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "checkedAt": "2026-08-21T13:59:21.482157+00:00"
+    "checkedAt": "2026-08-21T15:19:35.684832+00:00"
   }
 }
