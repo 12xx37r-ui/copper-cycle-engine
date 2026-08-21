@@ -993,14 +993,14 @@ def main():
             rel=1.0 if state=='LIVE' else 0.9
             RUNTIME.mark('inventory',state,src,data_at=actual_at,used=True,reliability=rel,ttl_s=45*86400)
         else:
-            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='official sources retried this run; diagnostic free supply proxy excluded from score')
+            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=None,used=False,reliability=0.0,alternative='official sources retried this run; diagnostic free supply proxy excluded from score')
     else:
         inv={k:prev_phys.get(k) for k in ('lmeInventoryTonnes','shfeInventoryTonnes','sources','statuses','collectorVersion','dataAt','cadence','lmeMonthlyHistory')}
         inv['sources']=inv.get('sources') or {}; inv['statuses']=inv.get('statuses') or {}
         if prev_official:
             RUNTIME.mark('inventory','CACHE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=True,reliability=0.90,ttl_s=24*3600)
         else:
-            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=PREVIOUS_PAYLOAD.get('generatedAt'),used=False,reliability=0.0,alternative='official exchange access remains blocked/unavailable; next retry cadence 6h')
+            RUNTIME.mark('inventory','UNAVAILABLE','LME/SHFE',data_at=None,used=False,reliability=0.0,alternative='official exchange access remains blocked/unavailable; next retry cadence 6h')
 
     shared_copper=(price.get('dailyCandles') or [])
     china=china_cycle_proxy(shared_copper)
@@ -1054,7 +1054,7 @@ def main():
         state='LIVE' if actual_at==today else 'CACHE'
         RUNTIME.mark('physical',state,'LME/SHFE',data_at=actual_at,used=True,reliability=1.0 if state=='LIVE' else 0.9,ttl_s=45*86400)
     else:
-        RUNTIME.mark('physical','UNAVAILABLE','LME/SHFE',data_at=today,used=False,reliability=0.0,alternative='diagnostic free supply proxy exists but is not official inventory')
+        RUNTIME.mark('physical','UNAVAILABLE','LME/SHFE',data_at=None,used=False,reliability=0.0,alternative='diagnostic free supply proxy exists but is not official inventory')
         RUNTIME.mark('free_supply_proxy','FALLBACK','Yahoo Finance',data_at=now.isoformat(),used=False,reliability=0.70,alternative='COMEX curve + FXI China proxy + concentrate proxy')
 
     payload={"schemaVersion":"1.0","modelVersion":ENGINE_MODEL_VERSION,"generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,

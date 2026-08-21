@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import math
 import re
 from dataclasses import dataclass
@@ -434,6 +435,11 @@ def _write_state(state: dict[str, Any]) -> None:
     STATE_PATH.write_text(json.dumps(state,ensure_ascii=False,indent=2))
 
 def _official_attempt_due(state: dict[str, Any]) -> bool:
+    # One-run diagnostic escape hatch for GitHub Actions/manual dispatch.
+    # Set COPPER_FORCE_OFFICIAL_INVENTORY=1 to bypass the 6h cooldown without
+    # permanently changing normal polling cadence.
+    if str(os.environ.get('COPPER_FORCE_OFFICIAL_INVENTORY','')).strip().lower() in {'1','true','yes','on'}:
+        return True
     raw=state.get('lastOfficialAttemptAt')
     if not raw:
         return True
@@ -569,9 +575,14 @@ def choose_primary_metrics(history: list[dict[str, Any]]) -> dict[str, Any]:
 def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: list[str]) -> dict[str, Any]:
     physical = payload.setdefault("physical", {})
     evidence_class = "exchange_mirror" if metrics.get("basket") == "lme_mirror" else "official_exchange"
+    derived_status = (
+        "UNAVAILABLE" if metrics.get("currentValue") is None else
+        "FALLBACK" if metrics.get("basket") == "lme_mirror" else
+        "CACHE" if metrics.get("cadence") in {"monthly", "weekly"} else "LIVE"
+    )
     official = {
         "collectorVersion": COLLECTOR_VERSION,
-        "status": metrics.get("status"),
+        "status": derived_status,
         "basket": metrics.get("basket"),
         "evidenceClass": evidence_class,
         "officialSourceAvailable": evidence_class == "official_exchange",
@@ -629,11 +640,7 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
     # mirror fields independently.  It explicitly separates the usable evidence
     # from the health of the blocked official-direct route.
     base_health = ((payload.get("apiHealth") or {}).get("sources") or {}).get("inventory") or {}
-    canonical_status = (
-        "UNAVAILABLE" if metrics.get("currentValue") is None else
-        "FALLBACK" if metrics.get("basket") == "lme_mirror" else
-        "CACHE" if metrics.get("cadence") in {"monthly", "weekly"} else "LIVE"
-    )
+    canonical_status = derived_status
     payload["inventoryEvidence"] = {
         "usable": bool(metrics.get("currentValue") is not None and metrics.get("changePct13w") is not None and metrics.get("percentile") is not None),
         "status": canonical_status,
@@ -652,6 +659,7 @@ def apply_to_payload(payload: dict[str, Any], metrics: dict[str, Any], errors: l
         "officialDirectStatus": base_health.get("status") or "UNAVAILABLE",
         "officialDirectSource": base_health.get("source") or "LME/SHFE",
         "officialDirectReason": base_health.get("fallback"),
+        "officialDirectCheckedAt": base_health.get("checkedAt"),
         "fallbackReason": ("Official exchange machine access unavailable; using explicitly-labelled LME stock mirror" if metrics.get("basket") == "lme_mirror" else None),
     }
 
