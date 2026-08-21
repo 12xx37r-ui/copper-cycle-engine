@@ -21,7 +21,7 @@ STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_5_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_6_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -906,7 +906,14 @@ def run() -> dict[str, Any]:
         mirror_errors=['LME mirror refresh cadence not due; using committed mirror history']
 
     lme_rows=[]; lme_errors=[]; lme_diagnostics=[]; shfe_current=None; shfe_errors=[]; comex_current=None; comex_errors=[]
-    if _official_attempt_due(state):
+    # A parser-version change must get one real official attempt immediately, even
+    # if the persisted 6h cooldown says not due. This prevents a newly deployed
+    # parser fix from appearing inactive until the old retry window expires.
+    forced_env = str(os.environ.get('COPPER_FORCE_OFFICIAL_INVENTORY','')).strip().lower() in {'1','true','yes','on'}
+    parser_version_changed = state.get('lastLmeParserVersion') != COLLECTOR_VERSION
+    official_due = _official_attempt_due(state) or parser_version_changed
+    official_attempt_reason = ('force_env' if forced_env else ('parser_version_changed' if parser_version_changed else ('cadence_due' if official_due else 'cooldown')))
+    if official_due:
         # Keep probing true exchange sources, but do not hammer dozens of blocked
         # historical URLs every 30-minute market run. The mirror supplies history;
         # official routes are retried on a six-hour cadence.
@@ -915,9 +922,18 @@ def run() -> dict[str, Any]:
         comex_current, comex_errors = collect_comex_current()
         state['lastOfficialAttemptAt']=datetime.now(timezone.utc).isoformat()
         state['lastOfficialErrors']=(lme_errors+shfe_errors+comex_errors)[-20:]
+        state['lastLmeParserVersion']=COLLECTOR_VERSION
         _write_state(state)
     else:
         lme_errors=['official exchange retry cadence not due; using committed history/current mirror']
+        lme_diagnostics.append({
+            'provider':'LME',
+            'route':'official_monthly_gate',
+            'reason':'skipped_by_cooldown',
+            'collectorVersion':COLLECTOR_VERSION,
+            'lastOfficialAttemptAt':state.get('lastOfficialAttemptAt'),
+            'checkedAt':datetime.now(timezone.utc).isoformat(),
+        })
 
     new_groups: list[list[dict[str, Any]]] = [lme_rows, mirror_rows]
     if shfe_current:
@@ -954,6 +970,8 @@ def run() -> dict[str, Any]:
         "inventoryEvidenceClass": ("exchange_mirror" if metrics.get("basket") == "lme_mirror" else "official_exchange"),
         "inventorySource": metrics.get("source"),
         "officialRetryDue": _official_attempt_due(state),
+        "officialAttemptExecuted": bool(official_due),
+        "officialAttemptReason": official_attempt_reason,
         "errors": errors[-10:],
         "lmeOfficialMonthlyDiagnostics": lme_diagnostics[-20:],
     }
