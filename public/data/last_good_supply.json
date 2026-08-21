@@ -1,12 +1,12 @@
 {
-  "savedAt": "2026-08-21T15:19:35.786774+00:00",
-  "generatedAt": "2026-08-21T15:19:30.377745+00:00",
+  "savedAt": "2026-08-21T17:03:29.964420+00:00",
+  "generatedAt": "2026-08-21T17:03:25.872820+00:00",
   "supply": {
     "supplyDisruptionScore": 0,
     "events": [],
     "eventCount": 0,
     "rawNetImpact": 0,
-    "staleRejected": 76,
+    "staleRejected": 75,
     "undatedRejected": 0,
     "windowDays": 14,
     "filterVersion": "COPPER_SUPPLY_FILTER_V4_20260819",
@@ -16,12 +16,12 @@
   "health": {
     "status": "LIVE",
     "source": "Google News RSS",
-    "dataAt": "2026-08-21T15:19:30.377745+00:00",
-    "ageSeconds": 5.3,
+    "dataAt": "2026-08-21T17:03:25.872820+00:00",
+    "ageSeconds": 3.9,
     "usedInCalculation": true,
     "reliability": 0.75,
     "fallback": "event proxy; not verified disrupted tonnage",
     "url": "https://news.google.com/",
-    "checkedAt": "2026-08-21T15:19:35.640902+00:00"
+    "checkedAt": "2026-08-21T17:03:29.767092+00:00"
   }
 }
