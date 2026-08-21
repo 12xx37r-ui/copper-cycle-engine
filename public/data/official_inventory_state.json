@@ -1,10 +1,11 @@
 {
-  "lastOfficialAttemptAt": "2026-08-21T05:07:40.003465+00:00",
+  "lastOfficialAttemptAt": "2026-08-21T05:10:25.915885+00:00",
   "lastOfficialErrors": [
     "SHFE parsed no copper total: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
     "SHFE parsed no copper total: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
     "CME/COMEX HTTPError"
   ],
   "lastMirrorAttemptAt": "2026-08-21T05:04:05.161691+00:00",
-  "lastMirrorErrors": []
+  "lastMirrorErrors": [],
+  "lastLmeParserVersion": "COPPER_INVENTORY_EVIDENCE_V4_6_20260821"
 }
