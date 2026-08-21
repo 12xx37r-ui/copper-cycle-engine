@@ -18,7 +18,7 @@ UA = {
     "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language":"en-US,en;q=0.9"
 }
-ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_10_20260821"
+ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_11_20260821"
 SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
 INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V5_20260821"
 
@@ -285,6 +285,100 @@ def _month_distance(a: int, b: int) -> int:
     return (by - ay) * 12 + (bm - am)
 
 
+
+def _curve_baseline_last_good():
+    try:
+        prev = (PREVIOUS_PAYLOAD.get("curve") or {}).get("baseline") or {}
+        if not isinstance(prev, dict):
+            return None
+        mean = num(prev.get("meanSpreadPct"))
+        sd = num(prev.get("sdSpreadPct"))
+        obs = int(prev.get("observationCount") or 0)
+        if mean is None or sd is None or sd <= 0 or obs < 20:
+            return None
+        return dict(prev)
+    except Exception:
+        return None
+
+
+def _yf_contract_daily_closes(symbol: str, period: str = "6mo"):
+    """One bounded Yahoo history request for the selected curve leg.
+
+    No retry loop here: the main curve snapshot already talks to Yahoo.  If this
+    auxiliary baseline request fails, the engine keeps the previous committed
+    baseline as LKG instead of hammering Yahoo again.
+    """
+    try:
+        RUNTIME._throttle('Yahoo Finance')
+        RUNTIME._stat('Yahoo Finance')['network_calls'] += 1
+        h = yf.Ticker(symbol).history(period=period, interval="1d", auto_adjust=False)
+        if h is None or h.empty:
+            raise RuntimeError('empty Yahoo curve history')
+        out = {}
+        for idx, row in h.iterrows():
+            close = num(row.get("Close"))
+            if close is None or close <= 0:
+                continue
+            try:
+                day = idx.date().isoformat()
+            except Exception:
+                day = str(idx)[:10]
+            out[day] = close
+        if len(out) < 20:
+            raise RuntimeError(f'insufficient Yahoo curve history: {len(out)}')
+        return out, None
+    except Exception as e:
+        RUNTIME._stat('Yahoo Finance')['errors'] += 1
+        return None, f"{type(e).__name__}: {e}"
+
+
+def _build_curve_baseline(near_symbol: str, far_symbol: str, current_spread_pct: float):
+    checked_at = iso_now()
+    near_hist, near_err = _yf_contract_daily_closes(near_symbol)
+    far_hist, far_err = _yf_contract_daily_closes(far_symbol)
+    if near_hist and far_hist:
+        today = datetime.now(timezone.utc).date().isoformat()
+        dates = sorted(d for d in near_hist.keys() if d != today and d in far_hist)
+        spreads = [((far_hist[d] / near_hist[d]) - 1) * 100 for d in dates if near_hist[d] > 0 and far_hist[d] > 0][-60:]
+        if len(spreads) >= 20:
+            mean = sum(spreads) / len(spreads)
+            variance = sum((x - mean) ** 2 for x in spreads) / max(1, len(spreads) - 1)
+            sd = max(math.sqrt(variance), 0.05)
+            z = (float(current_spread_pct) - mean) / sd
+            return {
+                "meanSpreadPct": mean,
+                "sdSpreadPct": sd,
+                "zScore": z,
+                "directionScore": clamp(-z * 20, -60, 60),
+                "observationCount": len(spreads),
+                "nearSymbol": near_symbol,
+                "farSymbol": far_symbol,
+                "dataAt": dates[-1] if dates else None,
+                "checkedAt": checked_at,
+                "status": "LIVE",
+                "method": "selected near/far contract daily closes · last 60 completed overlapping sessions",
+                "errors": [],
+            }
+    old = _curve_baseline_last_good()
+    errs = [x for x in (near_err, far_err) if x]
+    if old:
+        old["status"] = "LKG"
+        old["checkedAt"] = checked_at
+        old["errors"] = errs or ["current baseline refresh unavailable; previous committed baseline reused"]
+        old["fallbackReason"] = "current Yahoo baseline refresh unavailable; previous committed baseline reused"
+        z = (float(current_spread_pct) - float(old["meanSpreadPct"])) / max(float(old["sdSpreadPct"]), 0.05)
+        old["zScore"] = z
+        old["directionScore"] = clamp(-z * 20, -60, 60)
+        return old
+    return {
+        "meanSpreadPct": None, "sdSpreadPct": None, "zScore": None,
+        "directionScore": None, "observationCount": 0,
+        "nearSymbol": near_symbol, "farSymbol": far_symbol,
+        "dataAt": None, "checkedAt": checked_at, "status": "UNAVAILABLE",
+        "method": "selected near/far contract daily closes · last 60 completed overlapping sessions",
+        "errors": errs or ["curve baseline unavailable"],
+    }
+
 def futures_curve():
     codes = "FGHJKMNQUVXZ"
     now = datetime.now(timezone.utc)
@@ -327,6 +421,7 @@ def futures_curve():
     observed = [parse_dt(near.get("dataAt")), parse_dt(far.get("dataAt"))]
     observed = [x for x in observed if x is not None]
     data_at = min(observed).isoformat() if observed else None
+    baseline = _build_curve_baseline(near["symbol"], far["symbol"], spread)
     return {
         "near": near,
         "far": far,
@@ -339,6 +434,7 @@ def futures_curve():
         "status": "LIVE",
         "dataAt": data_at,
         "checkedAt": iso_now(),
+        "baseline": baseline,
         "errors": errors[-8:],
     }
 
