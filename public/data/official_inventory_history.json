@@ -15797,6 +15797,18 @@
   {
     "date": "2026-04-30",
     "components": {
+      "lme": 398675.0
+    },
+    "basket": "lme",
+    "totalTonnes": 398675.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-april-2026.xlsx",
+    "route": "lme_stocks_summary"
+  },
+  {
+    "date": "2026-04-30",
+    "components": {
       "lme": 399725.0
     },
     "basket": "lme_mirror",
@@ -16053,6 +16065,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-05-31",
+    "components": {
+      "lme": 386050.0
+    },
+    "basket": "lme",
+    "totalTonnes": 386050.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2026.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2026-06-01",
@@ -16326,6 +16350,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-06-30",
+    "components": {
+      "lme": 324850.0
+    },
+    "basket": "lme",
+    "totalTonnes": 324850.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2026.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2026-06-30",
@@ -16625,6 +16661,18 @@
     "sourceClass": "exchange_mirror",
     "officialUnderlying": "LME",
     "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-07-31",
+    "components": {
+      "lme": 244025.0
+    },
+    "basket": "lme",
+    "totalTonnes": 244025.0,
+    "cadence": "monthly",
+    "source": "LME official monthly stock report",
+    "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
+    "route": "lme_stocks_summary"
   },
   {
     "date": "2026-07-31",
