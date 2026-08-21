@@ -21,7 +21,7 @@ STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_6_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_7_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -415,8 +415,9 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
                 })
 
         if found is not None:
+            obs_date = _month_end(y, m).isoformat()
             rows.append({
-                "date": _month_end(y, m).isoformat(),
+                "date": obs_date,
                 "components": {"lme": found},
                 "basket": "lme",
                 "totalTonnes": found,
@@ -424,6 +425,17 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
                 "source": "LME official monthly stock report",
                 "sourceUrl": source_url,
                 "route": route,
+            })
+            diagnostics.append({
+                "provider": "LME",
+                "route": route,
+                "period": f"{y}-{m:02d}",
+                "dataAt": obs_date,
+                "url": source_url,
+                "statusCode": 200,
+                "reason": "parsed_copper_total",
+                "copperTotalTonnes": found,
+                "checkedAt": datetime.now(timezone.utc).isoformat(),
             })
 
         m -= 1
@@ -911,13 +923,22 @@ def run() -> dict[str, Any]:
     # parser fix from appearing inactive until the old retry window expires.
     forced_env = str(os.environ.get('COPPER_FORCE_OFFICIAL_INVENTORY','')).strip().lower() in {'1','true','yes','on'}
     parser_version_changed = state.get('lastLmeParserVersion') != COLLECTOR_VERSION
-    official_due = _official_attempt_due(state) or parser_version_changed
-    official_attempt_reason = ('force_env' if forced_env else ('parser_version_changed' if parser_version_changed else ('cadence_due' if official_due else 'cooldown')))
+    old_lme=[r for r in old if isinstance(r,dict) and r.get('basket')=='lme']
+    official_history_bootstrap = len(old_lme) < MIN_PERCENTILE_OBS
+    cadence_due = _official_attempt_due(state)
+    official_due = forced_env or cadence_due or parser_version_changed or official_history_bootstrap
+    official_attempt_reason = (
+        'force_env' if forced_env else
+        'parser_version_changed' if parser_version_changed else
+        'official_history_bootstrap' if official_history_bootstrap else
+        'cadence_due' if cadence_due else 'cooldown'
+    )
     if official_due:
-        # Keep probing true exchange sources, but do not hammer dozens of blocked
-        # historical URLs every 30-minute market run. The mirror supplies history;
-        # official routes are retried on a six-hour cadence.
-        lme_rows, lme_errors = collect_lme_monthly(months_back=4, diagnostics=lme_diagnostics)
+        # Once the LME parser is known-good, bootstrap enough official monthly
+        # observations for a same-source 13-week change and percentile. Four months
+        # are sufficient for routine refreshes, but not for MIN_PERCENTILE_OBS=12.
+        lme_months_back = 15 if official_history_bootstrap or parser_version_changed else 4
+        lme_rows, lme_errors = collect_lme_monthly(months_back=lme_months_back, diagnostics=lme_diagnostics)
         shfe_current, shfe_errors = collect_shfe_current()
         comex_current, comex_errors = collect_comex_current()
         state['lastOfficialAttemptAt']=datetime.now(timezone.utc).isoformat()
@@ -972,6 +993,9 @@ def run() -> dict[str, Any]:
         "officialRetryDue": _official_attempt_due(state),
         "officialAttemptExecuted": bool(official_due),
         "officialAttemptReason": official_attempt_reason,
+        "officialHistoryBootstrap": bool(official_history_bootstrap),
+        "officialLmeHistoryBefore": len(old_lme),
+        "officialLmeRowsCollected": len(lme_rows),
         "errors": errors[-10:],
         "lmeOfficialMonthlyDiagnostics": lme_diagnostics[-20:],
     }

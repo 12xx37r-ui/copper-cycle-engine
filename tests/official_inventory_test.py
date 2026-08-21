@@ -101,7 +101,7 @@ assert pp["physical"]["inventoryMode"]=="exchange_mirror_lme", pp
 assert pp["apiHealth"]["sources"]["official_inventory_derived"]["status"]=="FALLBACK", pp
 
 # V3 collector identity and column-agnostic parser guard.
-assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_6_20260821"
+assert m.COLLECTOR_VERSION == "COPPER_INVENTORY_EVIDENCE_V4_7_20260821"
 fixture_generic = """
 <table><tbody>
 <tr><td>07. August 2026</td><td>14,240.00</td><td>14,092.00</td><td>222,975</td></tr>
@@ -113,3 +113,8 @@ assert len(g) == 2, g
 assert g[-1]["date"] == "2026-08-07", g
 assert g[-1]["totalTonnes"] == 222975.0, g
 print("official inventory tests ok · V3 robust Westmetall parser")
+
+# V4.7 regression: manual force must bypass cooldown and bootstrap enough
+# official LME months to satisfy the 12-observation percentile floor.
+assert m.MIN_PERCENTILE_OBS == 12
+print("official inventory tests ok · V4.7 bootstrap semantics")
