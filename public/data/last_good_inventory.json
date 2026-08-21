@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T17:03:29.964106+00:00",
-  "generatedAt": "2026-08-21T17:03:25.872820+00:00",
+  "savedAt": "2026-08-21T19:09:19.157714+00:00",
+  "generatedAt": "2026-08-21T19:09:11.830642+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -21,12 +21,12 @@
     "officialObservationCount": 14,
     "inventoryDataAt": "2026-07-31",
     "inventoryCadence": {},
-    "freeSupplyProxyScore": 69.98904076047786,
-    "freeSupplyProxyTrendEquivalent": 11.993424456286718,
+    "freeSupplyProxyScore": 72.01458379762902,
+    "freeSupplyProxyTrendEquivalent": 13.208750278577408,
     "inventoryProxySource": "Free supply proxy: COMEX curve + China demand proxy + concentrate tightness proxy",
-    "chinaDemandProxyScore": 61.451702934603006,
-    "curveSpreadPct": 1.073964131268701,
-    "curveScore": 76.84910328171753,
+    "chinaDemandProxyScore": 61.27818827261957,
+    "curveSpreadPct": 1.2318432223531905,
+    "curveScore": 80.79608055882977,
     "concentrateTightnessProxy": 0,
     "officialInventoryDerived": {
       "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
@@ -61,7 +61,7 @@
           "reason": "skipped_by_cooldown",
           "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
           "lastOfficialAttemptAt": "2026-08-21T13:59:21.466222+00:00",
-          "checkedAt": "2026-08-21T17:03:29.807446+00:00"
+          "checkedAt": "2026-08-21T19:09:19.028299+00:00"
         }
       ]
     }
@@ -90,6 +90,6 @@
     "reliability": 0.95,
     "fallback": null,
     "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "checkedAt": "2026-08-21T17:03:29.822754+00:00"
+    "checkedAt": "2026-08-21T19:09:19.041446+00:00"
   }
 }
