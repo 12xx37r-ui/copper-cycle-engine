@@ -2,6 +2,12 @@ name: Update Copper Fundamentals
 
 on:
   workflow_dispatch:
+    inputs:
+      force_official_inventory:
+        description: 'Bypass 6h official LME/SHFE/CME retry cooldown for one diagnostic run'
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: '*/30 * * * 1-5'
     - cron: '20 */6 * * 0,6'
@@ -44,6 +50,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Collect copper data and enrich inventory evidence
+        env:
+          COPPER_FORCE_OFFICIAL_INVENTORY: ${{ github.event_name == 'workflow_dispatch' && inputs.force_official_inventory && '1' || '0' }}
         run: python src/collect.py
 
       - name: Apply bounded last-good publish guard
@@ -55,6 +63,7 @@ jobs:
           python tests/safety_mode_test.py
           python tests/copper_v3_test.py
           python tests/official_inventory_test.py
+          python tests/freshness_semantics_v4_test.py
           python tests/finalize_guard_test.py
 
       - name: Print four target indicators
@@ -66,7 +75,11 @@ jobs:
           print(json.dumps({
             'officialIndicators': d.get('officialIndicators'),
             'officialInventoryDerived': (d.get('physical') or {}).get('officialInventoryDerived'),
+            'inventoryEvidence': d.get('inventoryEvidence'),
+            'officialDirectInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('inventory'),
             'officialInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('official_inventory_derived'),
+            'curve': d.get('curve'),
+            'curveHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('curve'),
             'supplyHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('supply')
           }, ensure_ascii=False, indent=2))
           PY
