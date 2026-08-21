@@ -21,7 +21,7 @@ STATE_PATH = ROOT / "public/data/official_inventory_state.json"
 OFFICIAL_RETRY_HOURS = 6
 MIRROR_RETRY_HOURS = 6
 
-COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_20260821"
+COLLECTOR_VERSION = "COPPER_INVENTORY_EVIDENCE_V4_4_20260821"
 MIN_PERCENTILE_OBS = 12
 LAG_DAYS = 91
 HISTORY_YEARS = 5
@@ -77,13 +77,17 @@ def _tables(resp: requests.Response) -> list[pd.DataFrame]:
     if "spreadsheet" in ctype or re.search(r"\.(xlsx?|xls)(?:\?|$)", url, re.I):
         try:
             sheets = pd.read_excel(io.BytesIO(raw), sheet_name=None, header=None)
-            out.extend(sheets.values())
+            for sheet_name, frame in sheets.items():
+                frame.attrs["sheet_name"] = str(sheet_name)
+                out.append(frame)
             return out
         except Exception:
             # Some reports have a real header row and parse better with the default.
             try:
                 sheets = pd.read_excel(io.BytesIO(raw), sheet_name=None)
-                out.extend(sheets.values())
+                for sheet_name, frame in sheets.items():
+                    frame.attrs["sheet_name"] = str(sheet_name)
+                    out.append(frame)
                 return out
             except Exception:
                 return []
@@ -99,37 +103,128 @@ def _row_text(row: Iterable[Any]) -> str:
 
 
 def _copper_total_from_table(df: pd.DataFrame) -> float | None:
-    """Extract a copper stock total from LME/SHFE-style tables.
+    """Extract an official copper stock total from row-, column-, or sheet-oriented tables.
 
-    We deliberately require a copper-labelled row/section and plausible tonne values.
-    No proxy or price-derived value can enter this parser.
+    LME workbooks are presentation spreadsheets, not stable database exports.  Across
+    report families the metal can appear as a row label, a column header, or even the
+    worksheet name.  This parser stays conservative: it only accepts values tied to an
+    explicit copper context plus a stock/total/date context and a plausible tonne range.
     """
     if df is None or df.empty:
         return None
 
+    copper_re = re.compile(r"\bcopper\b|阴极铜|陰極銅|沪铜|铜", re.I)
+    other_metal_re = re.compile(r"\baluminium\b|\bzinc\b|\bnickel\b|\blead\b|\btin\b", re.I)
+    stock_re = re.compile(r"total|closing|closing stock|stock|inventory|库存|庫存|closing balance", re.I)
+    sheet_name = str(getattr(df, "attrs", {}).get("sheet_name", "") or "")
+    sheet_is_copper = bool(copper_re.search(sheet_name))
+
+    # 1) Row-oriented layout: COPPER appears on the same row as the total, or as a
+    # section header followed by a total/closing-stock row.
     for ridx in range(len(df)):
         row = list(df.iloc[ridx].values)
         text = _row_text(row)
-        if not re.search(r"\bcopper\b|阴极铜|陰極銅|沪铜|铜", text, re.I):
+        if not copper_re.search(text):
             continue
 
-        # First try same-row values. Exchange summaries commonly put totals here.
         vals = [x for x in (_num(v) for v in row) if x is not None and 500 <= x <= 10_000_000]
         if vals:
-            # The last large numeric cell is usually Total/Closing Stock. Choosing the
-            # last, rather than max(), avoids selecting cumulative movement columns.
             return vals[-1]
 
-        # Some XLSX layouts use a "COPPER" section header followed by totals.
-        for j in range(ridx + 1, min(ridx + 8, len(df))):
+        for j in range(ridx + 1, min(ridx + 12, len(df))):
             r2 = list(df.iloc[j].values)
-            t2 = _row_text(r2).lower()
-            if re.search(r"\baluminium\b|\bzinc\b|\bnickel\b|\blead\b|\btin\b", t2):
+            t2 = _row_text(r2)
+            if other_metal_re.search(t2):
                 break
             vals2 = [x for x in (_num(v) for v in r2) if x is not None and 500 <= x <= 10_000_000]
-            if vals2 and re.search(r"total|closing|stock|inventory|库存|庫存", t2, re.I):
+            if vals2 and stock_re.search(t2):
                 return vals2[-1]
+
+    # 2) Column-oriented layout: COPPER is a column header and dates/totals run down
+    # the sheet.  Prefer an explicit total/closing row; otherwise use the last dated
+    # observation in that copper column.
+    for ridx in range(len(df)):
+        row = list(df.iloc[ridx].values)
+        for cidx, cell in enumerate(row):
+            if not copper_re.search(str(cell)):
+                continue
+            explicit: list[float] = []
+            dated: list[float] = []
+            for j in range(ridx + 1, len(df)):
+                rowj = list(df.iloc[j].values)
+                row_text = _row_text(rowj)
+                if j > ridx + 1 and other_metal_re.search(row_text):
+                    break
+                if cidx >= len(rowj):
+                    continue
+                value = _num(rowj[cidx])
+                if value is None or not (500 <= value <= 10_000_000):
+                    # Some presentation sheets put the numeric value one cell to the
+                    # right of the metal header. Check only the immediate neighbour.
+                    if cidx + 1 < len(rowj):
+                        value = _num(rowj[cidx + 1])
+                if value is None or not (500 <= value <= 10_000_000):
+                    continue
+                if stock_re.search(row_text):
+                    explicit.append(value)
+                    continue
+                # Accept as a time-series observation only if the row visibly contains
+                # a date.  This avoids treating unrelated report statistics as stock.
+                if re.search(r"20\d{2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]20\d{2}|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b", row_text, re.I):
+                    dated.append(value)
+            if explicit:
+                return explicit[-1]
+            if dated:
+                return dated[-1]
+
+    # 3) Sheet-oriented layout: some official workbooks dedicate one worksheet to a
+    # metal and omit the metal name from the body.  If the worksheet itself says
+    # Copper, only accept rows explicitly labelled total/closing stock.
+    if sheet_is_copper:
+        candidates: list[float] = []
+        for ridx in range(len(df)):
+            row = list(df.iloc[ridx].values)
+            text = _row_text(row)
+            if not stock_re.search(text):
+                continue
+            vals = [x for x in (_num(v) for v in row) if x is not None and 500 <= x <= 10_000_000]
+            if vals:
+                candidates.append(vals[-1])
+        if candidates:
+            return candidates[-1]
+
     return None
+
+
+def _table_probe(df: pd.DataFrame, max_rows: int = 14, max_cols: int = 12) -> dict[str, Any]:
+    """Return a compact, JSON-safe structural probe for parser failures."""
+    if df is None:
+        return {"sheet": None, "rows": 0, "cols": 0, "sample": []}
+    sheet = str(getattr(df, "attrs", {}).get("sheet_name", "") or "") or None
+    sample: list[list[Any]] = []
+    interesting: list[int] = []
+    key_re = re.compile(r"copper|total|closing|stock|inventory|warehouse|date", re.I)
+    for i in range(min(len(df), 120)):
+        text = _row_text(list(df.iloc[i].values))
+        if key_re.search(text):
+            interesting.append(i)
+    chosen = []
+    for i in (list(range(min(5, len(df)))) + interesting):
+        if i not in chosen:
+            chosen.append(i)
+        if len(chosen) >= max_rows:
+            break
+    for i in chosen:
+        vals = []
+        for v in list(df.iloc[i].values)[:max_cols]:
+            if pd.isna(v):
+                vals.append(None)
+            elif isinstance(v, (int, float, str, bool)):
+                vals.append(v)
+            else:
+                vals.append(str(v))
+        sample.append(vals)
+    return {"sheet": sheet, "rows": int(df.shape[0]), "cols": int(df.shape[1]), "sample": sample}
 
 
 def _cme_copper_total_from_table(df: pd.DataFrame) -> float | None:
@@ -224,6 +319,8 @@ def collect_lme_monthly(months_back: int = 60, diagnostics: list[dict[str, Any]]
                     "contentType": (rr.headers.get("content-type") if getattr(rr, "headers", None) else None),
                     "contentLength": len(getattr(rr, "content", b"") or b""),
                     "tableCount": len(tables),
+                    "sheetNames": [str(getattr(t, "attrs", {}).get("sheet_name", "") or "") for t in tables],
+                    "tableProbes": [_table_probe(t) for t in tables[:3]],
                     "reason": "parsed_no_copper_total",
                     "checkedAt": datetime.now(timezone.utc).isoformat(),
                 })
