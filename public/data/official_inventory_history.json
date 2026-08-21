@@ -12788,7 +12788,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-06-02",
@@ -13060,7 +13060,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-06-30",
@@ -13371,7 +13371,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-07-31",
@@ -13656,7 +13656,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-august-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-09-01",
@@ -13941,7 +13941,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-september-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-09-30",
@@ -14252,7 +14252,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-october-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-10-31",
@@ -14537,7 +14537,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-november-2025.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2025-12-01",
@@ -15095,7 +15095,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-january-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-02-02",
@@ -15367,7 +15367,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-february-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-03-02",
@@ -15652,7 +15652,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-march-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-03-31",
@@ -15924,7 +15924,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-april-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-04-30",
@@ -16196,7 +16196,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-may-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-06-01",
@@ -16481,7 +16481,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-june-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-06-30",
@@ -16792,7 +16792,7 @@
     "cadence": "monthly",
     "source": "LME official monthly stock report",
     "sourceUrl": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "route": "lme_stocks_summary"
+    "route": "lme_stocks_summary_deterministic_fallback"
   },
   {
     "date": "2026-07-31",
