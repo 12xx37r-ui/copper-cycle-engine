@@ -64,6 +64,7 @@ jobs:
           python tests/copper_v3_test.py
           python tests/official_inventory_test.py
           python tests/freshness_semantics_v4_test.py
+          python tests/provider_diagnostics_v4_test.py
           python tests/finalize_guard_test.py
 
       - name: Print four target indicators
@@ -74,6 +75,8 @@ jobs:
           d=json.loads(Path('public/data/copper_fundamentals.json').read_text())
           print(json.dumps({
             'officialIndicators': d.get('officialIndicators'),
+            'lmeDiagnostics': ((d.get('physical') or {}).get('diagnostics') or {}).get('lme'),
+            'shfeDiagnostics': ((d.get('physical') or {}).get('diagnostics') or {}).get('shfe'),
             'officialInventoryDerived': (d.get('physical') or {}).get('officialInventoryDerived'),
             'inventoryEvidence': d.get('inventoryEvidence'),
             'officialDirectInventoryHealth': ((d.get('apiHealth') or {}).get('sources') or {}).get('inventory'),
