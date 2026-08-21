@@ -1,6 +1,6 @@
 {
-  "savedAt": "2026-08-21T22:54:40.357821+00:00",
-  "generatedAt": "2026-08-21T22:54:36.685627+00:00",
+  "savedAt": "2026-08-21T23:51:02.147938+00:00",
+  "generatedAt": "2026-08-21T23:50:58.533873+00:00",
   "physical": {
     "lmeInventoryTonnes": null,
     "shfeInventoryTonnes": null,
@@ -61,7 +61,7 @@
           "reason": "skipped_by_cooldown",
           "collectorVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
           "lastOfficialAttemptAt": "2026-08-21T20:54:15.212684+00:00",
-          "checkedAt": "2026-08-21T22:54:40.219738+00:00"
+          "checkedAt": "2026-08-21T23:51:02.004591+00:00"
         }
       ]
     }
@@ -90,6 +90,6 @@
     "reliability": 0.95,
     "fallback": null,
     "url": "https://www.lme.com/-/media/files/data/reports-and-data/warehouse-and-stock-reports/stocks-summary/stocks-july-2026.xlsx",
-    "checkedAt": "2026-08-21T22:54:40.234591+00:00"
+    "checkedAt": "2026-08-21T23:51:02.020073+00:00"
   }
 }
