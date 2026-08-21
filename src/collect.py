@@ -18,7 +18,7 @@ UA = {
     "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language":"en-US,en;q=0.9"
 }
-ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_8_20260821"
+ENGINE_MODEL_VERSION = "COPPER_ENGINE_V4_9_20260821"
 SUPPLY_FILTER_VERSION = "COPPER_SUPPLY_FILTER_V4_20260819"
 INVENTORY_COLLECTOR_VERSION = "COPPER_INVENTORY_V5_20260821"
 
@@ -1105,7 +1105,7 @@ def main():
         RUNTIME.mark('physical','UNAVAILABLE','LME/SHFE',data_at=None,used=False,reliability=0.0,alternative='diagnostic free supply proxy exists but is not official inventory')
         RUNTIME.mark('free_supply_proxy','FALLBACK','Yahoo Finance',data_at=now.isoformat(),used=False,reliability=0.70,alternative='COMEX curve + FXI China proxy + concentrate proxy')
 
-    payload={"schemaVersion":"1.0","modelVersion":ENGINE_MODEL_VERSION,"generatedAt":now.isoformat(),"engine":"copper-cycle-engine","price":price,
+    payload={"schemaVersion":"1.0","modelVersion":ENGINE_MODEL_VERSION,"generatedAt":now.isoformat(),"engine":"copper-cycle-engine","runtimeProvenance":{"collectorFile":str(Path(__file__).resolve().relative_to(ROOT)),"collectorVersion":ENGINE_MODEL_VERSION},"price":price,
              "physical":physical,"curve":curve,"cot":cot,"china":china,"concentrate":conc,"supply":dis,
              "apiHealth":RUNTIME.health(),
              "notes":["No paid data used","Official LME/SHFE inventory is never replaced by a proxy in official inventory fields",
@@ -1123,8 +1123,15 @@ def main():
     # last-resort evidence path when LME/SHFE/CME block the runner.
     enrich_result=None
     try:
-        from official_inventory_enricher import run as enrich_official_inventory
-        enrich_result=enrich_official_inventory()
+        import official_inventory_enricher as _inventory_enricher
+        expected_inventory_version = "COPPER_INVENTORY_EVIDENCE_V4_9_20260821"
+        actual_inventory_version = getattr(_inventory_enricher, "COLLECTOR_VERSION", None)
+        if actual_inventory_version != expected_inventory_version:
+            raise RuntimeError(
+                f"inventory enricher version mismatch: expected {expected_inventory_version}, "
+                f"got {actual_inventory_version}; loaded from {getattr(_inventory_enricher, '__file__', 'unknown')}"
+            )
+        enrich_result=_inventory_enricher.run()
     except Exception as e:
         enrich_result={"ok":False,"error":f"{type(e).__name__}: {e}"}
 
