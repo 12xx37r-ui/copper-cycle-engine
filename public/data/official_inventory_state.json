@@ -1,12 +1,12 @@
 {
-  "lastOfficialAttemptAt": "2026-08-21T20:54:15.212684+00:00",
+  "lastOfficialAttemptAt": "2026-08-22T03:11:35.335142+00:00",
   "lastOfficialErrors": [
     "LME official monthly refresh not due; using committed official history",
     "SHFE WAF/challenge: https://www.shfe.com.cn/eng/reports/StatisticalData/WeeklyData/",
     "SHFE WAF/challenge: https://www.shfe.com.cn/reports/tradedata/dailyandweeklydata/?query_options=1&query_params=inventory",
     "CME/COMEX HTTPError"
   ],
-  "lastMirrorAttemptAt": "2026-08-21T20:54:12.687550+00:00",
+  "lastMirrorAttemptAt": "2026-08-22T03:11:32.588198+00:00",
   "lastMirrorErrors": [],
   "lastLmeParserVersion": "COPPER_INVENTORY_EVIDENCE_V4_10_20260821",
   "lastLmeMonthlyAttemptAt": "2026-08-21T05:29:38.148467+00:00"

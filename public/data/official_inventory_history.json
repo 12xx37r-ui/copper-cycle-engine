@@ -1,18 +1,5 @@
 [
   {
-    "date": "2021-07-08",
-    "components": {
-      "lme": 214575.0
-    },
-    "basket": "lme_mirror",
-    "totalTonnes": 214575.0,
-    "cadence": "daily",
-    "source": "Westmetall mirror of LME Copper stock",
-    "sourceClass": "exchange_mirror",
-    "officialUnderlying": "LME",
-    "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2021"
-  },
-  {
     "date": "2021-07-09",
     "components": {
       "lme": 216800.0
@@ -16983,6 +16970,19 @@
     },
     "basket": "lme_mirror",
     "totalTonnes": 239925.0,
+    "cadence": "daily",
+    "source": "Westmetall mirror of LME Copper stock",
+    "sourceClass": "exchange_mirror",
+    "officialUnderlying": "LME",
+    "sourceUrl": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  {
+    "date": "2026-08-21",
+    "components": {
+      "lme": 238575.0
+    },
+    "basket": "lme_mirror",
+    "totalTonnes": 238575.0,
     "cadence": "daily",
     "source": "Westmetall mirror of LME Copper stock",
     "sourceClass": "exchange_mirror",
